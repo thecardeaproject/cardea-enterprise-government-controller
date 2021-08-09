@@ -1,0 +1,11 @@
+{
+  "defaultEnv":"test",
+  "test": {
+    "driver": "pg",
+    "host": "government-db",
+    "schema": "public",
+    "database": "government",
+    "user": "government",
+    "password": "government"
+  }
+}
