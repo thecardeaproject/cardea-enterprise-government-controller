@@ -15,6 +15,7 @@ See also: https://mit-license.org/
 * [db-migrate-pg](https://github.com/db-migrate/pg)
 * [express-session](https://github.com/expressjs/session)
 * [jsonwebtoken](https://github.com/auth0/node-jsonwebtoken)
+* [luxon](https://github.com/moment/luxon)
 * [nodemailer](https://github.com/nodemailer/nodemailer)
 * [nodemon](https://github.com/remy/nodemon/)
 * [passport](https://github.com/jaredhanson/passport)

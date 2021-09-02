@@ -582,7 +582,10 @@ const messageHandler = async (ws, context, type, data = {}) => {
       case 'PRESENTATIONS':
         switch (type) {
           case 'REQUEST':
-            await Presentations.requestPresentation(data.connectionID)
+            await Presentations.requestPresentation(
+              data.connectionID,
+              data.type,
+            )
             break
           default:
             console.error(`Unrecognized Message Type: ${type}`)

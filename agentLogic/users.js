@@ -328,7 +328,7 @@ const createUser = async function (email, roles) {
     sendEmailNewAccount(
       currentSMTP.dataValues.value.auth.user,
       user.email,
-      currentOrganization.value.companyName,
+      currentOrganization.value.organizationName,
       token,
     )
 
@@ -446,7 +446,7 @@ const updateUser = async function (
             currentSMTP.dataValues.value.auth.user,
             email,
             username,
-            currentOrganization.value.companyName,
+            currentOrganization.value.organizationName,
             newToken,
           )
         } else {
@@ -454,7 +454,7 @@ const updateUser = async function (
           sendEmailNewAccount(
             currentSMTP.dataValues.value.auth.user,
             email,
-            currentOrganization.value.companyName,
+            currentOrganization.value.organizationName,
             newToken,
           )
         }
@@ -570,7 +570,7 @@ const resendAccountConfirmation = async function (email) {
     sendEmailNewAccount(
       currentSMTP.dataValues.value.auth.user,
       email,
-      currentOrganization.value.companyName,
+      currentOrganization.value.organizationName,
       token,
     )
 
