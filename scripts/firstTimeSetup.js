@@ -119,7 +119,7 @@ const ledgerWrites = async () => {
     credDefIDs.push(
       await CredDefs.createCredDef(
         'default',
-        'RuuJwd3JMffNwZ43DcJKN1:2:Trusted_Traveler:1.4',
+        process.env.SCHEMA_TRUSTED_TRAVELER,
       ),
     )
 
