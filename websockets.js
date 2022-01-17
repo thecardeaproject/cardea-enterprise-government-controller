@@ -46,6 +46,7 @@ wss.on('connection', async (ws, req) => {
     )
     const DBSession = await Sessions.getSessionById(sid)
     const clientOrigin = req.headers.origin
+
     // (eldersonar) When in a live environment, we check to make sure the client origin matches our server
     // and we ensure the connection has a valid session ID
     if (process.env.NODE_ENV !== 'development') {
@@ -222,9 +223,7 @@ const messageHandler = async (ws, context, type, data = {}) => {
             break
 
           case 'UPDATE':
-            if (
-              check(rules, userRoles, 'users:update, users:updateRoles')
-            ) {
+            if (check(rules, userRoles, 'users:update, users:updateRoles')) {
               console.log(data)
               const updatedUser = await Users.updateUser(
                 data.user_id,
@@ -465,7 +464,6 @@ const messageHandler = async (ws, context, type, data = {}) => {
         switch (type) {
           case 'SET_THEME':
             if (check(rules, userRoles, 'settings:update')) {
-              console.log('SET_THEME')
               const updatedTheme = await Settings.setTheme(data)
               if (updatedTheme) {
                 sendMessage(ws, 'SETTINGS', 'SETTINGS_THEME', updatedTheme)
@@ -487,19 +485,28 @@ const messageHandler = async (ws, context, type, data = {}) => {
             break
 
           case 'GET_THEME':
-            console.log('GET_THEME')
             const currentTheme = await Settings.getTheme()
             if (currentTheme)
               sendMessage(ws, 'SETTINGS', 'SETTINGS_THEME', currentTheme)
             else
               sendMessage(ws, 'SETTINGS', 'SETTINGS_ERROR', {
-                error: "ERROR: theme couldn't be fetched.",
+                error: "ERROR: UI theme couldn't be fetched.",
+              })
+            break
+
+          case 'GET_SCHEMAS':
+            console.log('GET_SCHEMAS')
+            const currentSchemas = await Settings.getSchemas()
+            if (currentSchemas)
+              sendMessage(ws, 'SETTINGS', 'SETTINGS_SCHEMAS', currentSchemas)
+            else
+              sendMessage(ws, 'SETTINGS', 'SETTINGS_ERROR', {
+                error: "ERROR: Credential schemas couldn't be fetched.",
               })
             break
 
           case 'SET_SMTP':
             if (check(rules, userRoles, 'settings:update')) {
-              console.log('SET_SMTP')
               const updatedSMTP = await Settings.setSMTP(data)
               if (updatedSMTP)
                 sendMessage(
@@ -515,7 +522,7 @@ const messageHandler = async (ws, context, type, data = {}) => {
             } else {
               sendMessage(ws, 'SETTINGS', 'SETTINGS_ERROR', {
                 error:
-                  'ERROR: You are not authorized to update smtp configurations.',
+                  'ERROR: You are not authorized to update SMTP configurations.',
               })
             }
             break
@@ -549,8 +556,8 @@ const messageHandler = async (ws, context, type, data = {}) => {
             }
             break
 
-          case 'GET_ORGANIZATION_NAME':
-            console.log('GET_ORGANIZATION_NAME')
+          case 'GET_ORGANIZATION':
+            console.log('GET_ORGANIZATION')
             const currentOrganization = await Settings.getOrganization()
             if (currentOrganization)
               sendMessage(
@@ -564,6 +571,34 @@ const messageHandler = async (ws, context, type, data = {}) => {
                 error: "ERROR: organization name couldn't be fetched.",
               })
             break
+
+          case 'SET_MANIFEST':
+            if (check(rules, userRoles, 'settings:update')) {
+              console.log('SET_MANIFEST')
+              console.log(data)
+              const manifest = await Settings.setManifest(
+                data.short_name,
+                data.name,
+                data.theme_color,
+                data.background_color,
+              )
+              if (manifest.error) {
+                sendMessage(ws, 'SETTINGS', 'SETTINGS_ERROR', manifest)
+              } else {
+                // sendMessage(ws, 'SETTINGS', 'MANIFEST', newImage)
+                sendMessage(
+                  ws,
+                  'SETTINGS',
+                  'SETTINGS_SUCCESS',
+                  'Manifest was successfully updated!',
+                )
+              }
+            } else {
+              sendMessage(ws, 'SETTINGS', 'SETTINGS_ERROR', {
+                error: 'ERROR: You are not authorized to update the manifest.',
+              })
+            }
+            break
         }
         break
 
@@ -571,9 +606,7 @@ const messageHandler = async (ws, context, type, data = {}) => {
         switch (type) {
           case 'SET_LOGO':
             if (check(rules, userRoles, 'settings:update')) {
-              console.log('SET_LOGO')
-              // console.log(data)
-              const newImage = await Images.setImage(
+              const newImage = await Images.setLogo(
                 data.name,
                 data.type,
                 data.image,
@@ -596,8 +629,87 @@ const messageHandler = async (ws, context, type, data = {}) => {
             }
             break
 
+          case 'SET_FAVICON':
+            if (check(rules, userRoles, 'settings:update')) {
+              console.log('SET_FAVICON')
+              console.log(data)
+              const newImage = await Images.setFavicon(
+                data.name,
+                data.type,
+                data.image,
+              )
+              if (newImage.error) {
+                sendMessage(ws, 'SETTINGS', 'SETTINGS_ERROR', newImage)
+              } else {
+                sendMessage(
+                  ws,
+                  'SETTINGS',
+                  'SETTINGS_SUCCESS',
+                  'Favicon was successfully updated!',
+                )
+              }
+            } else {
+              sendMessage(ws, 'SETTINGS', 'SETTINGS_ERROR', {
+                error: 'ERROR: You are not authorized to update the favicon.',
+              })
+            }
+            break
+
+          case 'SET_LOGO192':
+            if (check(rules, userRoles, 'settings:update')) {
+              console.log('SET_LOGO192')
+              console.log(data)
+              const newImage = await Images.setLogo192(
+                data.name,
+                data.type,
+                data.image,
+              )
+              if (newImage.error) {
+                sendMessage(ws, 'SETTINGS', 'SETTINGS_ERROR', newImage)
+              } else {
+                sendMessage(
+                  ws,
+                  'SETTINGS',
+                  'SETTINGS_SUCCESS',
+                  'Logo192.png was successfully updated!',
+                )
+              }
+            } else {
+              sendMessage(ws, 'SETTINGS', 'SETTINGS_ERROR', {
+                error:
+                  'ERROR: You are not authorized to update the logo192.png.',
+              })
+            }
+            break
+
+          case 'SET_LOGO512':
+            if (check(rules, userRoles, 'settings:update')) {
+              console.log('SET_LOGO512')
+              console.log(data)
+              const newImage = await Images.setLogo512(
+                data.name,
+                data.type,
+                data.image,
+              )
+              if (newImage.error) {
+                sendMessage(ws, 'SETTINGS', 'SETTINGS_ERROR', newImage)
+              } else {
+                sendMessage(
+                  ws,
+                  'SETTINGS',
+                  'SETTINGS_SUCCESS',
+                  'Logo512.png was successfully updated!',
+                )
+              }
+            } else {
+              sendMessage(ws, 'SETTINGS', 'SETTINGS_ERROR', {
+                error:
+                  'ERROR: You are not authorized to update the logo512.png.',
+              })
+            }
+            break
+
           default:
-            console.log('GET_IMAGES')
             const images = await Images.getAll()
             if (images) sendMessage(ws, 'SETTINGS', 'LOGO', images[0])
             else

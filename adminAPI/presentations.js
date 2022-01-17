@@ -66,8 +66,6 @@ const requestPresentation = async (
   }
 }
 
-
-
 // (eldersonar) Request identity proof. (the difference between this and above function is that we don't need to use schemas)
 const requestProof = async (
   connectionID,
@@ -119,8 +117,6 @@ const requestProof = async (
     throw error
   }
 }
-
-
 
 module.exports = {
   requestPresentation,

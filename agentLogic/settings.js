@@ -1,4 +1,5 @@
 const Settings = require('../orm/settings')
+const fs = require('fs')
 
 // Perform Agent Business Logic
 
@@ -68,6 +69,50 @@ const setOrganization = async (data = {}) => {
   }
 }
 
+const setManifest = async (short_name, name, theme_color, bg_color) => {
+  try {
+    const manifest = {
+      short_name: short_name,
+      name: name,
+      icons: [
+        {
+          src: 'favicon.ico',
+          sizes: '64x64 32x32 24x24 16x16',
+          type: 'image/x-icon',
+        },
+        {
+          src: 'logo192.png',
+          type: 'image/png',
+          sizes: '192x192',
+        },
+        {
+          src: 'logo512.png',
+          type: 'image/png',
+          sizes: '512x512',
+        },
+      ],
+      start_url: '.',
+      display: 'standalone',
+      theme_color: theme_color,
+      background_color: bg_color,
+    }
+
+    fs.writeFile(
+      'web/manifest.json',
+      JSON.stringify(manifest, 'utf8', '\t'),
+      function (err) {
+        if (err) throw err
+        console.log('complete')
+      },
+    )
+
+    return 'success'
+  } catch (error) {
+    console.error('Error updating manifest.json')
+    throw error
+  }
+}
+
 module.exports = {
   getTheme,
   setTheme,
@@ -75,4 +120,5 @@ module.exports = {
   setSMTP,
   getOrganization,
   setOrganization,
+  setManifest,
 }

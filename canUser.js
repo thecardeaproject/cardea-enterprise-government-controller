@@ -1,9 +1,7 @@
 const check = (rules, userRoles, actions) => {
-
-
-console.log(rules)
-console.log(userRoles)
-console.log(actions)
+  console.log(rules)
+  console.log(userRoles)
+  console.log(actions)
 
   // Get user roles
   if (!userRoles) {

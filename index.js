@@ -135,38 +135,39 @@ app.use(passport.session())
 // Authentication
 app.post('/api/user/log-in', (req, res, next) => {
   // Empty/data checks
-  if (!req.body.username || !req.body.password)
+  if (!req.body.username || !req.body.password) {
     res.json({error: 'All fields must be filled out.'})
-  if (!Util.validateAlphaNumeric(req.body.username))
+  } else if (!Util.validateAlphaNumeric(req.body.username)) {
     res.json({
-      error:
-        'Username must be at least 3 character long and consist of alphanumeric values.',
+      error: 'Username or password is wrong.',
     })
-  if (!Util.validatePassword(req.body.password))
+  } else if (!Util.validatePassword(req.body.password)) {
     res.json({
-      error:
-        'Must be at least: 1 digit, 1 lowercase, 1 uppercase, 1 special characters, 8 characters.',
+      error: 'Username or password is wrong.',
     })
-  if (!req.body.password || !req.body.username)
+  } else if (!req.body.password || !req.body.username) {
     res.json({error: 'All fields must be filled out.'})
-  passport.authenticate('local', (err, user, info) => {
-    if (err) throw err
-    if (!user) res.json({error: 'Username or password is wrong.'})
-    else {
-      req.logIn(user, (err) => {
-        if (err) throw err
-        // Put roles in the array
-        const userRoles = []
-        req.user.Roles.forEach((element) => userRoles.push(element.role_name))
+  } else {
+    passport.authenticate('local', (err, user, info) => {
+      if (err) throw err
+      if (!user) res.json({error: 'Username or password is wrong.'})
+      else {
+        req.logIn(user, (err) => {
+          if (err) throw err
 
-        res.json({
-          id: req.user.user_id,
-          username: req.user.username,
-          roles: userRoles,
+          // Put roles in the array
+          const userRoles = []
+          req.user.Roles.forEach((element) => userRoles.push(element.role_name))
+
+          res.json({
+            id: req.user.user_id,
+            username: req.user.username,
+            roles: userRoles,
+          })
         })
-      })
-    }
-  })(req, res, next)
+      }
+    })(req, res, next)
+  }
 })
 
 // Logging out
@@ -190,8 +191,14 @@ app.post('/api/user/log-out', (req, res) => {
 // Validate JWT
 app.post('/api/user/token/validate', async (req, res) => {
   try {
-    const verify = jwt.verify(req.body.token, process.env.JWT_SECRET)
-    res.status(200).json({status: 'The link is valid.'})
+    jwt.verify(req.body.token, process.env.JWT_SECRET)
+
+    const unusedtoken = await Users.getUserByToken(req.body.token)
+    if (!unusedtoken) {
+      res.json({error: 'The link has expired.'})
+    } else {
+      res.status(200).json({status: 'The link is valid.'})
+    }
   } catch (err) {
     console.error(err)
     res.json({error: 'The link has expired.'})
@@ -213,8 +220,7 @@ app.post('/api/user/password/update', async (req, res) => {
     res.status(200).json({error: 'All fields must be filled out.'})
   else if (!Util.validatePassword(req.body.password)) {
     res.json({
-      error:
-        'Must be at least: 1 digit, 1 lowercase, 1 uppercase, 1 special characters, 8+ characters.',
+      error: 'Password must be at least 15 characters.',
     })
   } else {
     try {
@@ -255,14 +261,12 @@ app.post('/api/user/update', async (req, res) => {
 
     if (!Util.validateAlphaNumeric(req.body.username))
       res.json({
-        error:
-          'Username must be at least 3 character long and consist of alphanumeric values.',
+        error: 'Username or password is wrong',
       })
 
     if (!Util.validatePassword(req.body.password))
       res.json({
-        error:
-          'Must be at least: 1 digit, 1 lowercase, 1 uppercase, 1 special characters, 8 characters.',
+        error: 'Password must be at least 15 characters.',
       })
 
     userByEmail = await Users.getUserByEmail(req.body.email)
