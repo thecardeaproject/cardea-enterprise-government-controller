@@ -359,6 +359,24 @@ const messageHandler = async (ws, context, type, data = {}) => {
         }
         break
 
+      case 'EXCHANGE':
+        switch (type) {
+          case 'OUT_OF_BAND':
+            if (check(rules, userCookieParsed, 'invitations:create')) {
+              let invitation = await Invitations.createOutOfBandInvitation()
+
+              sendMessage(ws, 'EXCHANGE', 'OUT_OF_BAND', {
+                invitation_record: invitation,
+              })
+            } else {
+              sendMessage(ws, 'INVITATIONS', 'INVITATIONS_ERROR', {
+                error: 'ERROR: You are not authorized to create invitations.',
+              })
+            }
+            break
+        }
+        break
+
       case 'PASSPORTS':
         switch (type) {
           case 'UPDATE_OR_CREATE':

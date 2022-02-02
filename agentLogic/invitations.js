@@ -1,7 +1,10 @@
 const Util = require('../util')
 const AdminAPI = require('../adminAPI')
+const DIDExchange = require('../adminAPI/didExchange')
 
 let Connections = require('../orm/connections.js')
+
+const base64url = require('base64url')
 
 // Perform Agent Business Logic
 
@@ -91,7 +94,23 @@ const createPersistentSingleUseInvitation = async (workflow = 'moderator') => {
   }
 }
 
+const createOutOfBandInvitation = async () => {
+  try {
+    const OOBMessage = await DIDExchange.createOutOfBandInvitation()
+
+    const JSONInvitation = JSON.stringify(OOBMessage.invitation).trim()
+    const encodedInvitation = base64url(JSONInvitation)
+    const OOBInvitationURL = `http://quiet-fish-5.tun1.indiciotech.io?oob=${encodedInvitation}`
+
+    return OOBInvitationURL
+  } catch (error) {
+    console.error('Error sending out-of-band message!')
+    throw error
+  }
+}
+
 module.exports = {
   createSingleUseInvitation,
   createPersistentSingleUseInvitation,
+  createOutOfBandInvitation,
 }
