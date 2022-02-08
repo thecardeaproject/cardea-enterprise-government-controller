@@ -359,20 +359,25 @@ const messageHandler = async (ws, context, type, data = {}) => {
         }
         break
 
-      case 'EXCHANGE':
+      case 'OUT_OF_BAND':
         switch (type) {
-          case 'OUT_OF_BAND':
+          case 'CREATE_INVITATION':
             if (check(rules, userCookieParsed, 'invitations:create')) {
               let invitation = await Invitations.createOutOfBandInvitation()
 
-              sendMessage(ws, 'EXCHANGE', 'OUT_OF_BAND', {
+              sendMessage(ws, 'OUT_OF_BAND', 'INVITATION', {
                 invitation_record: invitation,
               })
             } else {
-              sendMessage(ws, 'INVITATIONS', 'INVITATIONS_ERROR', {
+              sendMessage(ws, 'OUT_OF_BAND', 'INVITATIONS_ERROR', {
                 error: 'ERROR: You are not authorized to create invitations.',
               })
             }
+            break
+
+          default:
+            console.error(`Unrecognized Message Type: ${type}`)
+            sendErrorMessage(ws, 1, 'Unrecognized Message Type')
             break
         }
         break
