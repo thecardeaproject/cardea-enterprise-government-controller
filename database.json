@@ -2,10 +2,10 @@
   "defaultEnv":"test",
   "test": {
     "driver": "pg",
-    "host": "government-db",
+    "host": {"ENV": "DB_HOST"},
     "schema": "public",
-    "database": "government",
-    "user": "government",
-    "password": "government"
+    "database": {"ENV": "DB"},
+    "user": {"ENV": "DB_USERNAME"},
+    "password": {"ENV": "DB_PASSWORD"}
   }
 }
