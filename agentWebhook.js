@@ -115,16 +115,4 @@ router.post('/topic/data-transfer/:goalCode', async (req, res, next) => {
   res.status(200).send('Ok')
 })
 
-router.post('/topic/oob-invitation/', async (req, res, next) => {
-  console.log(
-    'Aries Cloud Agent Webhook Message----Create Out-Of-Band Message------',
-  )
-
-  console.log('OOB Details:')
-  const OOBMessage = req.body
-  console.log(OOBMessage)
-
-  res.status(200).send('Ok')
-})
-
 module.exports = router

@@ -293,6 +293,20 @@ const messageHandler = async (ws, context, type, data = {}) => {
             }
             break
 
+          case 'ACCEPT_INVITATION':
+            if (check(rules, userCookieParsed, 'invitations:accept')) {
+              let invitation = await Invitations.acceptInvitation(data)
+
+              // sendMessage(ws, 'INVITATIONS', 'INVITATION', {
+              //   invitation_record: invitation,
+              // })
+            } else {
+              sendMessage(ws, 'INVITATIONS', 'INVITATIONS_ERROR', {
+                error: 'ERROR: You are not authorized to accept invitations.',
+              })
+            }
+            break
+
           default:
             console.error(`Unrecognized Message Type: ${type}`)
             sendErrorMessage(ws, 1, 'Unrecognized Message Type')
@@ -371,6 +385,16 @@ const messageHandler = async (ws, context, type, data = {}) => {
             } else {
               sendMessage(ws, 'OUT_OF_BAND', 'INVITATIONS_ERROR', {
                 error: 'ERROR: You are not authorized to create invitations.',
+              })
+            }
+            break
+
+          case 'ACCEPT_INVITATION':
+            if (check(rules, userCookieParsed, 'invitations:accept')) {
+              await Invitations.acceptOutOfBandInvitation(data)
+            } else {
+              sendMessage(ws, 'OUT_OF_BAND', 'INVITATIONS_ERROR', {
+                error: 'ERROR: You are not authorized to accept invitations.',
               })
             }
             break
