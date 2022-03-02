@@ -7,7 +7,8 @@ const check = require('./canUser')
 const rules = require('./rbac-rules')
 const cookie = require('cookie')
 const cookieParser = require('cookie-parser')
-let userCookieParsed = undefined
+
+let userRoles = []
 
 wss = new WebSocket.Server({server: server, path: '/api/ws'})
 console.log('Websockets Setup')
@@ -32,17 +33,92 @@ const sendMessageToAll = (context, type, data = {}) => {
 }
 
 // (JamesKEbert)TODO: Add a connection timeout to gracefully exit versus nginx configuration closing abrubtly
-wss.on('connection', (ws, req) => {
+wss.on('connection', async (ws, req) => {
   console.log('New Websocket Connection')
 
+  const cookies = cookie.parse(req.headers.cookie)
   // Getting the user data from the cookie
   try {
-    const cookies = cookie.parse(req.headers.cookie)
-    const userCookie = cookieParser.signedCookie(cookies['user'])
-    userCookieParsed = JSON.parse(userCookie.substring(2))
+    //console.log("Getting session cookie from headers")
+    const sid = cookieParser.signedCookie(
+      cookies['sessionId'],
+      process.env.SESSION_SECRET,
+    )
+    const DBSession = await Sessions.getSessionById(sid)
+    const clientOrigin = req.headers.origin
+
+    // (eldersonar) When in a live environment, we check to make sure the client origin matches our server
+    // and we ensure the connection has a valid session ID
+    if (process.env.NODE_ENV !== 'development') {
+      if (process.env.WEB_ROOT === clientOrigin) {
+        const check_sid = cookieParser.signedCookie(
+          cookies['sessionId'],
+          process.env.SESSION_SECRET,
+        )
+        const check_sid_in_db = await Sessions.getSessionById(check_sid)
+
+        if (!check_sid_in_db) {
+          ws.terminate()
+        }
+      } else {
+        //sendMessage(ws, 'ERROR', 'WEBSOCKET_ERROR', { error: "Origin validation failed" })
+        ws.terminate()
+      }
+    } else {
+      const check_sid = cookieParser.signedCookie(
+        cookies['sessionId'],
+        process.env.SESSION_SECRET,
+      )
+      const check_sid_in_db = await Sessions.getSessionById(check_sid)
+
+      if (!check_sid_in_db) {
+        ws.terminate()
+      }
+    }
+
+    const parsedSession = JSON.parse(DBSession.dataValues.data)
+    const userBySession = await Users.getUser(parsedSession.passport.user)
+
+    userRoles = []
+    userBySession.dataValues.Roles.forEach((element) =>
+      userRoles.push(element.role_name),
+    )
   } catch (error) {}
 
-  ws.on('message', (message) => {
+  ws.on('message', async (message) => {
+    const clientOrigin = req.headers.origin
+
+    if (ws.readyState === 1) {
+      // (eldersonar) When in a live environment, we check to make sure the client origin matches our server
+      // and we ensure the connection has a valid session ID
+      if (process.env.NODE_ENV !== 'development') {
+        if (process.env.WEB_ROOT === clientOrigin) {
+          const check_sid = cookieParser.signedCookie(
+            cookies['sessionId'],
+            process.env.SESSION_SECRET,
+          )
+          const check_sid_in_db = await Sessions.getSessionById(check_sid)
+
+          if (!check_sid_in_db) {
+            ws.terminate()
+          }
+        } else {
+          //sendMessage(ws, 'ERROR', 'WEBSOCKET_ERROR', { error: "Origin validation failed" })
+          ws.terminate()
+        }
+      } else {
+        const check_sid = cookieParser.signedCookie(
+          cookies['sessionId'],
+          process.env.SESSION_SECRET,
+        )
+        const check_sid_in_db = await Sessions.getSessionById(check_sid)
+
+        if (!check_sid_in_db) {
+          ws.terminate()
+        }
+      }
+    }
+
     try {
       const parsedMessage = JSON.parse(message)
       console.log('New Websocket Message:', parsedMessage)
@@ -101,7 +177,7 @@ const messageHandler = async (ws, context, type, data = {}) => {
       case 'USERS':
         switch (type) {
           case 'GET_ALL':
-            if (check(rules, userCookieParsed, 'users:read')) {
+            if (check(rules, userRoles, 'users:read')) {
               const users = await Users.getAll()
               sendMessage(ws, 'USERS', 'USERS', {users})
             } else {
@@ -127,10 +203,10 @@ const messageHandler = async (ws, context, type, data = {}) => {
             break
 
           case 'CREATE':
-            if (check(rules, userCookieParsed, 'users:create')) {
+            if (check(rules, userRoles, 'users:create')) {
               const newUser = await Users.createUser(data.email, data.roles)
               if (newUser.error) {
-                console.log(newUser.error)
+                // console.log(newUser.error)
                 sendMessage(ws, 'USERS', 'USER_ERROR', newUser)
               } else if (newUser === true) {
                 sendMessage(
@@ -148,10 +224,7 @@ const messageHandler = async (ws, context, type, data = {}) => {
             break
 
           case 'UPDATE':
-            if (
-              check(rules, userCookieParsed, 'users:update, users:updateRoles')
-            ) {
-              console.log(data)
+            if (check(rules, userRoles, 'users:update, users:updateRoles')) {
               const updatedUser = await Users.updateUser(
                 data.user_id,
                 data.username,
@@ -179,7 +252,7 @@ const messageHandler = async (ws, context, type, data = {}) => {
             break
 
           case 'PASSWORD_UPDATE':
-            if (check(rules, userCookieParsed, 'users:updatePassword')) {
+            if (check(rules, userRoles, 'users:updatePassword')) {
               const updatedUserPassword = await Users.updatePassword(
                 data.id,
                 data.password,
@@ -196,10 +269,9 @@ const messageHandler = async (ws, context, type, data = {}) => {
             break
 
           case 'DELETE':
-            if (check(rules, userCookieParsed, 'users:delete')) {
+            if (check(rules, userRoles, 'users:delete')) {
               const deletedUser = await Users.deleteUser(data)
               if (deletedUser === true) {
-                console.log('user was deleted WS')
                 sendMessage(
                   ws,
                   'USERS',
@@ -218,10 +290,9 @@ const messageHandler = async (ws, context, type, data = {}) => {
             break
 
           case 'RESEND_CONFIRMATION':
-            if (check(rules, userCookieParsed, 'users:create')) {
+            if (check(rules, userRoles, 'users:create')) {
               const email = await Users.resendAccountConfirmation(data)
               if (email.error) {
-                console.log(email.error)
                 sendMessage(ws, 'USERS', 'USER_ERROR', email)
               } else if (email === true) {
                 sendMessage(
@@ -249,7 +320,7 @@ const messageHandler = async (ws, context, type, data = {}) => {
       case 'ROLES':
         switch (type) {
           case 'GET_ALL':
-            if (check(rules, userCookieParsed, 'roles:read')) {
+            if (check(rules, userRoles, 'roles:read')) {
               const roles = await Roles.getAll()
               sendMessage(ws, 'ROLES', 'ROLES', {roles})
             } else {
@@ -274,8 +345,8 @@ const messageHandler = async (ws, context, type, data = {}) => {
       case 'INVITATIONS':
         switch (type) {
           case 'CREATE_SINGLE_USE':
-            if (check(rules, userCookieParsed, 'invitations:create')) {
-              var invitation
+            if (check(rules, userRoles, 'invitations:create')) {
+              let invitation
               if (data.workflow) {
                 invitation = await Invitations.createPersistentSingleUseInvitation(
                   data.workflow,
@@ -303,7 +374,7 @@ const messageHandler = async (ws, context, type, data = {}) => {
       case 'CONTACTS':
         switch (type) {
           case 'GET_ALL':
-            if (check(rules, userCookieParsed, 'contacts:read')) {
+            if (check(rules, userRoles, 'contacts:read')) {
               const contacts = await Contacts.getAll(data.additional_tables)
               sendMessage(ws, 'CONTACTS', 'CONTACTS', {contacts})
             } else {
@@ -334,7 +405,7 @@ const messageHandler = async (ws, context, type, data = {}) => {
             if (
               check(
                 rules,
-                userCookieParsed,
+                userRoles,
                 'demographics:create, demographics:update',
               )
             ) {
@@ -342,7 +413,11 @@ const messageHandler = async (ws, context, type, data = {}) => {
                 data.contact_id,
                 data.email,
                 data.phone,
-                data.address,
+                data.street_address,
+                data.city,
+                data.state_province_region,
+                data.postal_code,
+                data.country,
               )
             } else {
               sendMessage(ws, 'DEMOGRAPHICS', 'DEMOGRAPHICS_ERROR', {
@@ -374,9 +449,9 @@ const messageHandler = async (ws, context, type, data = {}) => {
               data.date_of_issue,
               data.date_of_expiration,
               data.type,
-              data.code,
+              data.issuing_country,
               data.authority,
-              data.photo,
+              // data.photo,
             )
             break
 
@@ -390,7 +465,7 @@ const messageHandler = async (ws, context, type, data = {}) => {
       case 'SETTINGS':
         switch (type) {
           case 'SET_THEME':
-            if (check(rules, userCookieParsed, 'settings:update')) {
+            if (check(rules, userRoles, 'settings:update')) {
               console.log('SET_THEME')
               const updatedTheme = await Settings.setTheme(data)
               if (updatedTheme) {
@@ -419,12 +494,23 @@ const messageHandler = async (ws, context, type, data = {}) => {
               sendMessage(ws, 'SETTINGS', 'SETTINGS_THEME', currentTheme)
             else
               sendMessage(ws, 'SETTINGS', 'SETTINGS_ERROR', {
-                error: "ERROR: theme couldn't be fetched.",
+                error: "ERROR: UI theme couldn't be fetched.",
+              })
+            break
+
+          case 'GET_SCHEMAS':
+            console.log('GET_SCHEMAS')
+            const currentSchemas = await Settings.getSchemas()
+            if (currentSchemas)
+              sendMessage(ws, 'SETTINGS', 'SETTINGS_SCHEMAS', currentSchemas)
+            else
+              sendMessage(ws, 'SETTINGS', 'SETTINGS_ERROR', {
+                error: "ERROR: Credential schemas couldn't be fetched.",
               })
             break
 
           case 'SET_SMTP':
-            if (check(rules, userCookieParsed, 'settings:update')) {
+            if (check(rules, userRoles, 'settings:update')) {
               console.log('SET_SMTP')
               const updatedSMTP = await Settings.setSMTP(data)
               if (updatedSMTP)
@@ -441,13 +527,13 @@ const messageHandler = async (ws, context, type, data = {}) => {
             } else {
               sendMessage(ws, 'SETTINGS', 'SETTINGS_ERROR', {
                 error:
-                  'ERROR: You are not authorized to update smtp configurations.',
+                  'ERROR: You are not authorized to update SMTP configurations.',
               })
             }
             break
 
           case 'SET_ORGANIZATION_NAME':
-            if (check(rules, userCookieParsed, 'settings:update')) {
+            if (check(rules, userRoles, 'settings:update')) {
               console.log('SET_ORGANIZATION_NAME')
               const updatedOrganization = await Settings.setOrganization(data)
               if (updatedOrganization) {
@@ -465,18 +551,18 @@ const messageHandler = async (ws, context, type, data = {}) => {
                 )
               } else
                 sendMessage(ws, 'SETTINGS', 'SETTINGS_ERROR', {
-                  error: "ERROR: organization name can't be updated.",
+                  error: "ERROR: organization name and title can't be updated.",
                 })
             } else {
               sendMessage(ws, 'SETTINGS', 'SETTINGS_ERROR', {
                 error:
-                  'ERROR: You are not authorized to update the organization name.',
+                  'ERROR: You are not authorized to update the organization name or title.',
               })
             }
             break
 
-          case 'GET_ORGANIZATION_NAME':
-            console.log('GET_ORGANIZATION_NAME')
+          case 'GET_ORGANIZATION':
+            console.log('GET_ORGANIZATION')
             const currentOrganization = await Settings.getOrganization()
             if (currentOrganization)
               sendMessage(
@@ -487,8 +573,37 @@ const messageHandler = async (ws, context, type, data = {}) => {
               )
             else
               sendMessage(ws, 'SETTINGS', 'SETTINGS_ERROR', {
-                error: "ERROR: organization name couldn't be fetched.",
+                error:
+                  "ERROR: organization name and title couldn't be fetched.",
               })
+            break
+
+          case 'SET_MANIFEST':
+            if (check(rules, userRoles, 'settings:update')) {
+              console.log('SET_MANIFEST')
+              console.log(data)
+              const manifest = await Settings.setManifest(
+                data.short_name,
+                data.name,
+                data.theme_color,
+                data.background_color,
+              )
+              if (manifest.error) {
+                sendMessage(ws, 'SETTINGS', 'SETTINGS_ERROR', manifest)
+              } else {
+                // sendMessage(ws, 'SETTINGS', 'MANIFEST', newImage)
+                sendMessage(
+                  ws,
+                  'SETTINGS',
+                  'SETTINGS_SUCCESS',
+                  'Manifest was successfully updated!',
+                )
+              }
+            } else {
+              sendMessage(ws, 'SETTINGS', 'SETTINGS_ERROR', {
+                error: 'ERROR: You are not authorized to update the manifest.',
+              })
+            }
             break
         }
         break
@@ -496,10 +611,10 @@ const messageHandler = async (ws, context, type, data = {}) => {
       case 'IMAGES':
         switch (type) {
           case 'SET_LOGO':
-            if (check(rules, userCookieParsed, 'settings:update')) {
+            if (check(rules, userRoles, 'settings:update')) {
               console.log('SET_LOGO')
-              // console.log(data)
-              const newImage = await Images.setImage(
+              console.log(data)
+              const newImage = await Images.setLogo(
                 data.name,
                 data.type,
                 data.image,
@@ -522,13 +637,93 @@ const messageHandler = async (ws, context, type, data = {}) => {
             }
             break
 
+          case 'SET_FAVICON':
+            if (check(rules, userRoles, 'settings:update')) {
+              console.log('SET_FAVICON')
+              console.log(data)
+              const newImage = await Images.setFavicon(
+                data.name,
+                data.type,
+                data.image,
+              )
+              if (newImage.error) {
+                sendMessage(ws, 'SETTINGS', 'SETTINGS_ERROR', newImage)
+              } else {
+                sendMessage(
+                  ws,
+                  'SETTINGS',
+                  'SETTINGS_SUCCESS',
+                  'Favicon was successfully updated!',
+                )
+              }
+            } else {
+              sendMessage(ws, 'SETTINGS', 'SETTINGS_ERROR', {
+                error: 'ERROR: You are not authorized to update the favicon.',
+              })
+            }
+            break
+
+          case 'SET_LOGO192':
+            if (check(rules, userRoles, 'settings:update')) {
+              console.log('SET_LOGO192')
+              console.log(data)
+              const newImage = await Images.setLogo192(
+                data.name,
+                data.type,
+                data.image,
+              )
+              if (newImage.error) {
+                sendMessage(ws, 'SETTINGS', 'SETTINGS_ERROR', newImage)
+              } else {
+                sendMessage(
+                  ws,
+                  'SETTINGS',
+                  'SETTINGS_SUCCESS',
+                  'Logo192.png was successfully updated!',
+                )
+              }
+            } else {
+              sendMessage(ws, 'SETTINGS', 'SETTINGS_ERROR', {
+                error:
+                  'ERROR: You are not authorized to update the logo192.png.',
+              })
+            }
+            break
+
+          case 'SET_LOGO512':
+            if (check(rules, userRoles, 'settings:update')) {
+              console.log('SET_LOGO512')
+              console.log(data)
+              const newImage = await Images.setLogo512(
+                data.name,
+                data.type,
+                data.image,
+              )
+              if (newImage.error) {
+                sendMessage(ws, 'SETTINGS', 'SETTINGS_ERROR', newImage)
+              } else {
+                sendMessage(
+                  ws,
+                  'SETTINGS',
+                  'SETTINGS_SUCCESS',
+                  'Logo512.png was successfully updated!',
+                )
+              }
+            } else {
+              sendMessage(ws, 'SETTINGS', 'SETTINGS_ERROR', {
+                error:
+                  'ERROR: You are not authorized to update the logo512.png.',
+              })
+            }
+            break
+
           default:
             console.log('GET_IMAGES')
             const images = await Images.getAll()
             if (images) sendMessage(ws, 'SETTINGS', 'LOGO', images[0])
             else
               sendMessage(ws, 'SETTINGS', 'SETTINGS_ERROR', {
-                error: "ERROR: images couldn't be fetched.",
+                error: "ERROR: logo couldn't be fetched.",
               })
             break
         }
@@ -537,7 +732,7 @@ const messageHandler = async (ws, context, type, data = {}) => {
       case 'CREDENTIALS':
         switch (type) {
           case 'ISSUE_USING_SCHEMA':
-            if (check(rules, userCookieParsed, 'credentials:issue')) {
+            if (check(rules, userRoles, 'credentials:issue')) {
               await Credentials.autoIssueCredential(
                 data.connectionID,
                 data.issuerDID,
@@ -587,6 +782,175 @@ const messageHandler = async (ws, context, type, data = {}) => {
               data.type,
             )
             break
+
+          case 'GET_ALL':
+            const presentationReports = await Presentations.getAll()
+
+            sendMessage(ws, 'PRESENTATIONS', 'PRESENTATION_REPORTS', {
+              presentation_reports: presentationReports,
+            })
+            break
+          default:
+            console.error(`Unrecognized Message Type: ${type}`)
+            sendErrorMessage(ws, 1, 'Unrecognized Message Type')
+            break
+        }
+        break
+
+      //   case 'GOVERNANCE':
+      //     switch (type) {
+      //       case 'GET_PRIVILEGES':
+      //         console.log('GET_PRIVILEGES')
+      //         if (check(rules, userCookieParsed, 'invitations:create')) {
+      //           const privileges = await Governance.getPrivilegesByRoles()
+      //           if (privileges.error === 'noDID') {
+      //             console.log('No public did anchored')
+      //             sendMessage(ws, 'GOVERNANCE', 'GOVERNANCE_ERROR', {
+      //               error: 'ERROR: You need to anchor your DID',
+      //             })
+      //           } else if (privileges.error === 'noGov') {
+      //             console.log('Governance file is not set or missing')
+      //             sendMessage(ws, 'GOVERNANCE', 'GOVERNANCE_WARNING', { warning: 'WARNING: Governance is not set or missing' })
+      //             // } else if (privileges.error === 'limitedGov') {
+      //             //   console.log('Governance file is set, but lacks core configurations')
+      //             //   sendMessage(ws, 'GOVERNANCE', 'PRIVILEGES_SUCCESS', { privileges: ["ignore_governance"] })
+      //             // } else if (privileges.error === 'noPermissions') {
+      //             //   console.log('No permissions set')
+      //             //   sendMessage(ws, 'GOVERNANCE', 'GOVERNANCE_ERROR', {
+      //             //     error: 'ERROR: Governance permissions are not set',
+      //             //   })
+      //             // } else if (privileges.error === 'noPrivileges') {
+      //             //   console.log('No privileges set')
+      //             //   sendMessage(ws, 'GOVERNANCE', 'GOVERNANCE_ERROR', {
+      //             //     error: 'ERROR: Governance privileges are not set',
+      //             //   })
+
+      //           } else if (privileges.error === 'noPrivileges') {
+      //             console.log('No privileges set')
+      //             sendMessage(ws, 'GOVERNANCE', 'PRIVILEGES_SUCCESS', { privileges: ["ignore_privileges"] })
+
+      //           } else if (!privileges) {
+      //             console.log('ERROR: privileges undefined error')
+      //             sendMessage(ws, 'GOVERNANCE', 'GOVERNANCE_ERROR', {
+      //               error: 'ERROR: privileges undefined error',
+      //             })
+      //           } else {
+      //             sendMessage(ws, 'GOVERNANCE', 'PRIVILEGES_SUCCESS', {
+      //               privileges,
+      //             })
+      //           }
+      //         } else {
+      //           sendMessage(ws, 'GOVERNANCE', 'GOVERNANCE_ERROR', {
+      //             error: 'ERROR: You are not authorized to create invitations.',
+      //           })
+      //         }
+      //         break
+
+      //       case 'GET_PARTICIPANTS':
+      //         console.log('GET PARTICIPANTS')
+      //         if (check(rules, userCookieParsed, 'invitations:create')) {
+      //           const participants = await Governance.getParticipants()
+      //           if (participants.error === 'noGov') {
+      //             console.log('Governance file is not set or missing')
+      //             sendMessage(ws, 'GOVERNANCE', 'GOVERNANCE_WARNING', { warning: 'WARNING: Governance is not set or missing' })
+      //           } else if (participants.error === 'noParticipants') {
+      //             console.log('Governance file is set, but participants are missing')
+      //             sendMessage(ws, 'GOVERNANCE', 'PARTICIPANTS_SUCCESS', { participants: ["ignore_participants"] })
+      //           } else if (!participants) {
+      //             console.log('ERROR: participants undefined error')
+      //             sendMessage(ws, 'GOVERNANCE', 'GOVERNANCE_ERROR', {
+      //               error: 'ERROR: participants undefined error',
+      //             })
+      //           } else {
+      //             console.log(participants)
+      //             sendMessage(ws, 'GOVERNANCE', 'PARTICIPANTS_SUCCESS', {
+      //               participants,
+      //             })
+      //           }
+      //         } else {
+      //           sendMessage(ws, 'GOVERNANCE', 'GOVERNANCE_ERROR', {
+      //             error: 'ERROR: You are not authorized to create invitations.',
+      //           })
+      //         }
+      //         break
+
+      //       case 'GET_ACTIONS':
+      //         console.log('GET ACTIONS')
+      //         if (check(rules, userCookieParsed, 'invitations:create')) {
+      //           const actions = await Governance.getActions()
+      //           if (actions.error === 'noGov') {
+      //             console.log('Governance file is not set or missing')
+      //             sendMessage(ws, 'GOVERNANCE', 'GOVERNANCE_WARNING', { warning: 'WARNING: Governance is not set or missing' })
+      //           } else if (actions.error === 'noActions') {
+      //             console.log('Governance file is set, but actions are missing')
+      //             sendMessage(ws, 'GOVERNANCE', 'ACTIONS_SUCCESS', { actions: ["ignore_actions"] })
+      //           } else if (!actions) {
+      //             console.log('ERROR: actions undefined error')
+      //             sendMessage(ws, 'GOVERNANCE', 'GOVERNANCE_ERROR', {
+      //               error: 'ERROR: actions undefined error',
+      //             })
+      //           } else {
+      //             console.log(actions)
+      //             sendMessage(ws, 'GOVERNANCE', 'ACTIONS_SUCCESS', {
+      //               actions,
+      //             })
+      //           }
+      //         } else {
+      //           sendMessage(ws, 'GOVERNANCE', 'GOVERNANCE_ERROR', {
+      //             error: 'ERROR: You are not authorized to create invitations.',
+      //           })
+      //         }
+      //         break
+
+      //       default:
+      //         console.error(`Unrecognized Message Type: ${type}`)
+      //         sendErrorMessage(ws, 1, 'Unrecognized Message Type')
+      //         break
+      //     }
+      //     break
+
+      case 'GOVERNANCE':
+        switch (type) {
+          case 'GET_PRIVILEGES':
+            console.log('GET_PRIVILEGES')
+            if (check(rules, userRoles, 'invitations:create')) {
+              const privileges = await Governance.getPrivilegesByRoles()
+              if (privileges.error === 'noDID') {
+                console.log('No public did anchored')
+                sendMessage(ws, 'GOVERNANCE', 'PRIVILEGES_ERROR', {
+                  error: 'ERROR: You need to anchor your DID',
+                })
+              } else if (privileges.error === 'noGov') {
+                console.log('No permissions set')
+                sendMessage(ws, 'GOVERNANCE', 'PRIVILEGES_ERROR', {
+                  error: 'ERROR: Governance permissions are not set',
+                }) // change it to warning { warning: 'WARNING: Governance is not set or missing' }
+              } else if (privileges.error === 'noPermissions') {
+                console.log('No permissions set')
+                sendMessage(ws, 'GOVERNANCE', 'PRIVILEGES_ERROR', {
+                  error: 'ERROR: Governance permissions are not set',
+                })
+              } else if (privileges.error === 'noPrivileges') {
+                console.log('No privileges set')
+                sendMessage(ws, 'GOVERNANCE', 'PRIVILEGES_ERROR', {
+                  error: 'ERROR: Governance privileges are not set',
+                })
+              } else if (!privileges) {
+                console.log('ERROR: privileges undefined error')
+                sendMessage(ws, 'GOVERNANCE', 'PRIVILEGES_ERROR', {
+                  error: 'ERROR: privileges undefined error',
+                })
+              } else {
+                sendMessage(ws, 'GOVERNANCE', 'PRIVILEGES_SUCCESS', {
+                  privileges,
+                })
+              }
+            } else {
+              sendMessage(ws, 'GOVERNANCE', 'PRIVILEGES_ERROR', {
+                error: 'ERROR: You are not authorized to create invitations.',
+              })
+            }
+            break
           default:
             console.error(`Unrecognized Message Type: ${type}`)
             sendErrorMessage(ws, 1, 'Unrecognized Message Type')
@@ -620,7 +984,9 @@ const Passports = require('./agentLogic/passports')
 const Contacts = require('./agentLogic/contacts')
 const Credentials = require('./agentLogic/credentials')
 const Images = require('./agentLogic/images')
+const Governance = require('./agentLogic/governance')
 const Presentations = require('./agentLogic/presentations')
 const Settings = require('./agentLogic/settings')
+const Sessions = require('./agentLogic/sessions')
 const Users = require('./agentLogic/users')
 const Roles = require('./agentLogic/roles')

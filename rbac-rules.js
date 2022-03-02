@@ -15,7 +15,9 @@ const rules = {
     'demographics:update',
     'demographics:delete',
     'invitations:create',
+    'invitations:read',
     'invitations:delete',
+    'presentations:read',
     'roles:read',
     'settings:read',
     'settings:update',
@@ -40,6 +42,8 @@ const rules = {
     'demographics:read',
     'demographics:update',
     'invitations:create',
+    'invitations:read',
+    'presentations:read',
   ],
 }
 

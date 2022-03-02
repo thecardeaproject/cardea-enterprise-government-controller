@@ -15,7 +15,7 @@ const updateOrCreatePassport = async function (
   date_of_issue,
   date_of_expiration,
   type,
-  code,
+  issuing_country,
   authority,
   photo,
 ) {
@@ -32,7 +32,7 @@ const updateOrCreatePassport = async function (
       date_of_issue,
       date_of_expiration,
       type,
-      code,
+      issuing_country,
       authority,
       photo,
     )
