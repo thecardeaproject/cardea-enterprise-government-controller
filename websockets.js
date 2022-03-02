@@ -293,6 +293,20 @@ const messageHandler = async (ws, context, type, data = {}) => {
             }
             break
 
+          case 'ACCEPT_INVITATION':
+            if (check(rules, userCookieParsed, 'invitations:accept')) {
+              let invitation = await Invitations.acceptInvitation(data)
+
+              // sendMessage(ws, 'INVITATIONS', 'INVITATION', {
+              //   invitation_record: invitation,
+              // })
+            } else {
+              sendMessage(ws, 'INVITATIONS', 'INVITATIONS_ERROR', {
+                error: 'ERROR: You are not authorized to accept invitations.',
+              })
+            }
+            break
+
           default:
             console.error(`Unrecognized Message Type: ${type}`)
             sendErrorMessage(ws, 1, 'Unrecognized Message Type')
@@ -348,6 +362,39 @@ const messageHandler = async (ws, context, type, data = {}) => {
               sendMessage(ws, 'DEMOGRAPHICS', 'DEMOGRAPHICS_ERROR', {
                 error:
                   'ERROR: You are not authorized to create or update demographics.',
+              })
+            }
+            break
+
+          default:
+            console.error(`Unrecognized Message Type: ${type}`)
+            sendErrorMessage(ws, 1, 'Unrecognized Message Type')
+            break
+        }
+        break
+
+      case 'OUT_OF_BAND':
+        switch (type) {
+          case 'CREATE_INVITATION':
+            if (check(rules, userCookieParsed, 'invitations:create')) {
+              let invitation = await Invitations.createOutOfBandInvitation()
+
+              sendMessage(ws, 'OUT_OF_BAND', 'INVITATION', {
+                invitation_record: invitation,
+              })
+            } else {
+              sendMessage(ws, 'OUT_OF_BAND', 'INVITATIONS_ERROR', {
+                error: 'ERROR: You are not authorized to create invitations.',
+              })
+            }
+            break
+
+          case 'ACCEPT_INVITATION':
+            if (check(rules, userCookieParsed, 'invitations:accept')) {
+              await Invitations.acceptOutOfBandInvitation(data)
+            } else {
+              sendMessage(ws, 'OUT_OF_BAND', 'INVITATIONS_ERROR', {
+                error: 'ERROR: You are not authorized to accept invitations.',
               })
             }
             break
