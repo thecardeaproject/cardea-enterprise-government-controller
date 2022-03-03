@@ -27,7 +27,7 @@ const getGovernance = async () => {
       // url: 'https://government.black.indiciotech.io/api/governance-framework'
     }).then((res) => {
       console.log('......................................')
-    //   console.log(res.data)
+      //   console.log(res.data)
       return res.data
     })
     return response

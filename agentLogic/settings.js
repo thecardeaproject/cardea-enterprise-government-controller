@@ -45,7 +45,7 @@ const setSMTP = async (data = {}) => {
 
     data.IV = IV
     data.auth.pass = encryptedPassword
-    
+
     await Settings.updateSMTP(data)
     const updatedSMTP = await Settings.readSMTP()
     return updatedSMTP

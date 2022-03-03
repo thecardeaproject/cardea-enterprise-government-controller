@@ -11,7 +11,7 @@ const updateOrCreateDemographic = async function (
   city,
   state_province_region,
   postal_code,
-  country
+  country,
 ) {
   try {
     await Demographics.createOrUpdateDemographic(
@@ -22,7 +22,7 @@ const updateOrCreateDemographic = async function (
       city,
       state_province_region,
       postal_code,
-      country
+      country,
     )
 
     const contact = await ContactsCompiled.readContact(contact_id, [

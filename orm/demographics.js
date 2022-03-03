@@ -1,9 +1,9 @@
-const { Sequelize, DataTypes, Model } = require('sequelize')
+const {Sequelize, DataTypes, Model} = require('sequelize')
 const init = require('./init.js')
 sequelize = init.connect()
-const { Contact } = require('./contacts.js')
+const {Contact} = require('./contacts.js')
 
-class Demographic extends Model { }
+class Demographic extends Model {}
 
 Demographic.init(
   {
@@ -67,7 +67,7 @@ const createDemographic = async function (
   city,
   state_province_region,
   postal_code,
-  country
+  country,
 ) {
   try {
     const timestamp = Date.now()
@@ -100,7 +100,7 @@ const createOrUpdateDemographic = async function (
   city,
   state_province_region,
   postal_code,
-  country
+  country,
 ) {
   try {
     await sequelize.transaction(
@@ -207,7 +207,7 @@ const updateDemographic = async function (
   city,
   state_province_region,
   postal_code,
-  country
+  country,
 ) {
   try {
     const timestamp = Date.now()

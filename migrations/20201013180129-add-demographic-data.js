@@ -16,7 +16,7 @@ exports.setup = function (options, seedLink) {
 
 exports.up = function (db) {
   return db.createTable('demographic_data', {
-    contact_id: { type: 'int', primaryKey: true, unique: true },
+    contact_id: {type: 'int', primaryKey: true, unique: true},
     email: 'text',
     phone: 'text',
     email: 'text',

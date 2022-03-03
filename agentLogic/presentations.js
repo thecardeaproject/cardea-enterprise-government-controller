@@ -1,5 +1,5 @@
-const { DateTime } = require('luxon')
-const { v4: uuid } = require('uuid')
+const {DateTime} = require('luxon')
+const {v4: uuid} = require('uuid')
 
 const ControllerError = require('../errors')
 
@@ -13,7 +13,7 @@ const Demographics = require('./demographics')
 
 const Presentations = require('../orm/presentations')
 
-const { getOrganization } = require('./settings')
+const {getOrganization} = require('./settings')
 
 const Util = require('../util')
 
@@ -43,7 +43,7 @@ const requestIdentityPresentation = async (connectionID) => {
       'date_of_expiration',
       'type',
       'issuing_country',
-      'authority'
+      'authority',
     ],
   )
   return result
@@ -359,7 +359,7 @@ const handleCartesianProductSet = async (
 
           attributes[path] = {
             name: path,
-            restrictions: [{ schema_id }],
+            restrictions: [{schema_id}],
           }
         }
       }
@@ -530,7 +530,7 @@ const handleSimpleDescriptors = async (descriptors, connectionID) => {
         } else {
           attributes[path] = {
             name: path,
-            restrictions: [{ schema_id }],
+            restrictions: [{schema_id}],
           }
         }
       }
@@ -643,7 +643,7 @@ const requestPresentation = async (connectionID, type) => {
           } else {
             console.log(
               'There are no credentials of group ' +
-              pdf.presentation_definition.submission_requirements[0].from,
+                pdf.presentation_definition.submission_requirements[0].from,
             )
           }
         }
@@ -746,7 +746,7 @@ const requestPresentation = async (connectionID, type) => {
             } else {
               console.log(
                 'There are no credentials of group ' +
-                pdf.presentation_definition.submission_requirements[0].from,
+                  pdf.presentation_definition.submission_requirements[0].from,
               )
             }
           }
@@ -996,15 +996,16 @@ const adminMessage = async (message) => {
 
   const inputDescriptors = pdf.presentation_definition.input_descriptors
 
-
   if (message.state === 'verified') {
-    if (message.verified === 'true' && participantValidated && (
-      (message.presentation.requested_proof.revealed_attrs &&
+    if (
+      message.verified === 'true' &&
+      participantValidated &&
+      ((message.presentation.requested_proof.revealed_attrs &&
         Object.keys(message.presentation.requested_proof.revealed_attrs)
           .length > 0) ||
-      (message.presentation.requested_proof.revealed_attr_groups &&
-        Object.keys(message.presentation.requested_proof.revealed_attr_groups)
-          .length > 0))
+        (message.presentation.requested_proof.revealed_attr_groups &&
+          Object.keys(message.presentation.requested_proof.revealed_attr_groups)
+            .length > 0))
     ) {
       let attributes = ''
       let predicates = message.presentation.requested_proof.predicates
@@ -1068,7 +1069,7 @@ const adminMessage = async (message) => {
           {
             name: 'trusted_traveler_expiration_date_time',
             value: Math.round(
-              DateTime.local().plus({ days: 30 }).ts / 1000,
+              DateTime.local().plus({days: 30}).ts / 1000,
             ).toString(),
           },
           {
@@ -1200,7 +1201,7 @@ const adminMessage = async (message) => {
                             console.log(sortedDescriptorFields)
                             console.log(
                               JSON.stringify(sortedProofFields) ===
-                              JSON.stringify(sortedDescriptorFields),
+                                JSON.stringify(sortedDescriptorFields),
                             )
 
                             // (eldersonar) Check if arrays match after the predicates were removed
@@ -1253,7 +1254,6 @@ const adminMessage = async (message) => {
               console.log(proofResult)
               console.log(fieldsValidationResult)
 
-
               // (eldersonar) Hanlding additional manual validation for non-nested submission requirements
               // Check if all level validation passed
               if (proofResult && fieldsValidationResult) {
@@ -1261,20 +1261,22 @@ const adminMessage = async (message) => {
                   'Hanlding additional manual validation for non-nested submission requirements ',
                 )
 
-                if (attributes.lab_result && attributes.lab_specimen_collected_date) {
+                if (
+                  attributes.lab_result &&
+                  attributes.lab_specimen_collected_date
+                ) {
                   console.log(attributes.lab_specimen_collected_date.raw * 1000)
                   console.log(DateTime.local().plus({days: -3}).ts)
                   if (
-                    ((attributes.lab_result.raw === 'Negative') &&
-                      attributes.lab_specimen_collected_date.raw * 1000 >
-                      DateTime.local().plus({ days: -3 }).ts)
+                    attributes.lab_result.raw === 'Negative' &&
+                    attributes.lab_specimen_collected_date.raw * 1000 >
+                      DateTime.local().plus({days: -3}).ts
                   ) {
                     credentialVerifiedAttributes = credentialAttributes
                   }
                 } else {
                   console.log("Haven't meet any of the reqs")
                 }
-
 
                 console.log('Issuing trusted traveler credential.')
 
@@ -1289,8 +1291,7 @@ const adminMessage = async (message) => {
                   for (let i = 0; i < governance.actions.length; i++) {
                     // (eldersonar) Get schema id for trusted traveler
                     if (
-                      governance.actions[i].name ===
-                      'issue_trusted_traveler'
+                      governance.actions[i].name === 'issue_trusted_traveler'
                     ) {
                       schema_id = governance.actions[i].details.schema
                     }
@@ -1332,7 +1333,6 @@ const adminMessage = async (message) => {
                         content: 'INVALID_PROOF',
                       },
                     )
-
                   }
                 } else {
                   console.log('no governance or insificient privilieges')
@@ -1355,10 +1355,13 @@ const adminMessage = async (message) => {
           }
         }
       }
-    } else if (message.verified === 'true' && !participantValidated && (
-      (message.presentation.requested_proof.self_attested_attrs &&
-        Object.keys(message.presentation.requested_proof.self_attested_attrs)
-          .length === 0))) {
+    } else if (
+      message.verified === 'true' &&
+      !participantValidated &&
+      message.presentation.requested_proof.self_attested_attrs &&
+      Object.keys(message.presentation.requested_proof.self_attested_attrs)
+        .length === 0
+    ) {
       // (eldersonar) Send a basic message
       console.log("I'm here")
       console.log(message.state)
@@ -1369,13 +1372,16 @@ const adminMessage = async (message) => {
       })
       // (eldersonar) Handle passport and demographic
     } else {
-      console.log("self-attested")
+      console.log('self-attested')
       console.log(message.presentation.requested_proof)
 
       // (eldersonar) Get contact id
-      let contact = await Contacts.getContactByConnection(message.connection_id, [])
-      console.log("----this is the contact_id ----")
-      console.log("contact id is: " + contact.contact_id)
+      let contact = await Contacts.getContactByConnection(
+        message.connection_id,
+        [],
+      )
+      console.log('----this is the contact_id ----')
+      console.log('contact id is: ' + contact.contact_id)
 
       // (edersonar) Create demographic
       await Demographics.updateOrCreateDemographic(
@@ -1384,7 +1390,8 @@ const adminMessage = async (message) => {
         message.presentation.requested_proof.self_attested_attrs.phone,
         message.presentation.requested_proof.self_attested_attrs.street_address,
         message.presentation.requested_proof.self_attested_attrs.city,
-        message.presentation.requested_proof.self_attested_attrs.state_province_region,
+        message.presentation.requested_proof.self_attested_attrs
+          .state_province_region,
         message.presentation.requested_proof.self_attested_attrs.postalcode,
         message.presentation.requested_proof.self_attested_attrs.country,
       )
@@ -1392,7 +1399,8 @@ const adminMessage = async (message) => {
       // (eldersonar) Create passport
       await Passports.updateOrCreatePassport(
         contact.contact_id,
-        message.presentation.requested_proof.self_attested_attrs.passport_number,
+        message.presentation.requested_proof.self_attested_attrs
+          .passport_number,
         message.presentation.requested_proof.self_attested_attrs.surname,
         message.presentation.requested_proof.self_attested_attrs.given_names,
         message.presentation.requested_proof.self_attested_attrs.sex,
@@ -1400,9 +1408,11 @@ const adminMessage = async (message) => {
         message.presentation.requested_proof.self_attested_attrs.place_of_birth,
         message.presentation.requested_proof.self_attested_attrs.nationality,
         message.presentation.requested_proof.self_attested_attrs.date_of_issue,
-        message.presentation.requested_proof.self_attested_attrs.date_of_expiration,
+        message.presentation.requested_proof.self_attested_attrs
+          .date_of_expiration,
         message.presentation.requested_proof.self_attested_attrs.type,
-        message.presentation.requested_proof.self_attested_attrs.issuing_country,
+        message.presentation.requested_proof.self_attested_attrs
+          .issuing_country,
         message.presentation.requested_proof.self_attested_attrs.authority,
         message.presentation.requested_proof.self_attested_attrs.photo,
       )
