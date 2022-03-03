@@ -410,8 +410,4 @@ module.exports = {
   getParticipants,
   getActionsByPrivileges,
   getActions,
-  //------------ (eldersonar) TODO: remove after trial-------------
-  getLabPresentationDefinition,
-  getLabVaccinePresentationDefinition,
-  //------------ (eldersonar) TODO: remove after trial-------------
 }

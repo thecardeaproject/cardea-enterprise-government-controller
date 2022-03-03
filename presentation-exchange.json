@@ -146,24 +146,15 @@
                   "$.lab_result"
                 ],
                 "filter": {
-                  "type": "string",
-                  "oneOf": [
-                    {
-                      "const": "Negative",
-                      "dependent_fields": [
-                        {
-                          "path": [
-                            "$.lab_specimen_collected_date"
-                          ],
-                          "filter": {
-                            "type": "string",
-                            "maximum": "today",
-                            "minimum": "today:-:259200"
-                          }
-                        }
-                      ]
-                    }
-                  ]
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.lab_specimen_collected_date"
+                ],
+                "filter": {
+                  "type": "string"
                 }
               },
               {

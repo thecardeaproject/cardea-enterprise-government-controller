@@ -1,6 +1,5 @@
 const { DateTime } = require('luxon')
 const { v4: uuid } = require('uuid')
-const axios = require('axios')
 
 const ControllerError = require('../errors')
 
@@ -17,37 +16,6 @@ const Presentations = require('../orm/presentations')
 const { getOrganization } = require('./settings')
 
 const Util = require('../util')
-
-// (eldersonar) Get Presentation Definition file
-const getPresentationDefinition = async () => {
-  try {
-    const governance = await Governance.getGovernance()
-
-    // Presentation definition file
-    const pdfLink = governance.actions.find(
-      (item) => item.name === 'issue_trusted_traveler',
-    ).details.presentation_definition
-
-    const response = await axios({
-      method: 'GET',
-      url: pdfLink,
-    }).then((res) => {
-      return res.data
-    })
-
-    return response
-  } catch (error) {
-    console.error('Presentation Definition File Request Error')
-    // console.log(error.response.status)
-    console.log(error)
-
-    // (eldersonar) Do we handle specific codes or handle all errors as one?
-    // if (error.response.status)
-    return undefined
-
-    // throw error
-  }
-}
 
 // (eldersonar) Request identity proof
 const requestIdentityPresentation = async (connectionID) => {
@@ -99,88 +67,6 @@ function cartesian(args) {
   }
   helper([], 0)
   return result
-}
-
-// TODO: remove after development
-let counter = 0
-
-const createPresentationRequest = async (
-  connectionID,
-  predicates,
-  attributes,
-  name,
-  comment,
-) => {
-  // counter++
-
-  let list = { presentations: [] }
-
-  // Get contact
-  const contact = await Contacts.getContactByConnection(connectionID, [
-    'Traveler',
-  ])
-  console.log(contact)
-
-  // Create a proof element
-  const listElement = {
-    [name]: {
-      result: null,
-      presentation: {},
-    },
-  }
-
-  // Rearrange data
-  let presentationArray = []
-  presentationArray.push(listElement)
-  list.presentations = presentationArray
-
-  let oldProofList = []
-
-  // Check if proof result list is empty
-  if (
-    !contact.Traveler.dataValues.proof_result_list ||
-    Object.keys(contact.Traveler.dataValues.proof_result_list.presentations)
-      .length === 0
-  ) {
-    console.log('empty object')
-
-    // Update traveler's proof result list
-    await Travelers.updateProofResultList(contact.contact_id, list)
-
-    list = []
-    presentationArray = []
-  } else {
-    console.log('NOT empty object')
-    // Add new proof result element to the old list
-    oldProofList =
-      contact.Traveler.dataValues.proof_result_list.presentations[0]
-    list.presentations.push(oldProofList)
-
-    // Update traveler's proof result list
-    await Travelers.updateProofResultList(contact.contact_id, list)
-
-    list = []
-    presentationArray = []
-  }
-
-  // console.log("________________________________________________")
-  // console.log("This is the counter")
-  // console.log(counter)
-  // console.log("")
-  // console.log(name)
-  // console.log(predicates)
-  // console.log(attributes)
-  // console.log("____________________________________")
-
-  // (eldersonar) Send presentation request
-  await AdminAPI.Presentations.requestPresentation(
-    connectionID,
-    predicates,
-    attributes,
-    name,
-    comment,
-    false,
-  )
 }
 
 // (eldersonar) Complex input descriptors handler (one or multiple in-field conditions)
@@ -478,13 +364,14 @@ const handleCartesianProductSet = async (
         }
       }
 
-      // (eldersonar) Assemble presentation request
-      await createPresentationRequest(
+      // (eldersonar) Send presentation request
+      await AdminAPI.Presentations.requestPresentation(
         connectionID,
         predicates,
         attributes,
         name,
         comment,
+        false,
       )
     }
   } catch (error) {
@@ -648,15 +535,14 @@ const handleSimpleDescriptors = async (descriptors, connectionID) => {
         }
       }
 
-      // (eldersonar) TODO: Comment in to create presentation requests from "regular" input descriptors
-
-      // (eldersonar) Assemble presentation request
-      await createPresentationRequest(
+      // (eldersonar) Send presentation request
+      await AdminAPI.Presentations.requestPresentation(
         connectionID,
         predicates,
         attributes,
         name,
         comment,
+        false,
       )
 
       // (eldersonar) Clear variables at the end of each iteration
@@ -675,29 +561,9 @@ const requestPresentation = async (connectionID, type) => {
   // (eldersonar) Get governance file and presentation exchange file
   const pdf = await Governance.getPresentationDefinition()
 
-  //------------ (eldersonar) TODO: remove after trial-------------
-
-  const contact = await Contacts.getContactByConnection(connectionID, [])
-
-  // Update traveler's answer to the question
-  // await Travelers.updateProofType(contact.contact_id, type)
-
-  // let pdf = {}
-  // if (type === 'Lab+Vaccine') {
-  //   pdf = await Governance.getLabVaccinePresentationDefinition()
-  // } else if (type === 'Lab') {
-  //   pdf = await Governance.getLabPresentationDefinition()
-  // }
-  // //------------ (eldersonar) TODO: remove after trial-------------
-
   const inputDescriptors = pdf.presentation_definition.input_descriptors
 
   try {
-    // let result = null
-    // let proofCheckResult = []
-
-    const date = Math.floor(Date.now() / 1000)
-
     // (eldersonar) Check if we have submission requirments
     if (pdf.presentation_definition.submission_requirements) {
       if (
@@ -1126,25 +992,10 @@ const adminMessage = async (message) => {
     endorserDID,
   )
 
-  // Update traveler's proof status
-  const contact = await Contacts.getContactByConnection(message.connection_id, [
-    'Traveler',
-  ])
-
   const pdf = await Governance.getPresentationDefinition()
-
-  //------------ (eldersonar) TODO: remove after trial-------------
-  // let pdf = {}
-  // if (contact.Traveler.dataValues.proof_type === 'Lab+Vaccine') {
-  //   pdf = await Governance.getLabVaccinePresentationDefinition()
-  // } else if (contact.Traveler.dataValues.proof_type === 'Lab') {
-  //   pdf = await Governance.getLabPresentationDefinition()
-  // }
-  //------------ (eldersonar) TODO: remove after trial-------------
 
   const inputDescriptors = pdf.presentation_definition.input_descriptors
 
-  // await Travelers.updateProofStatus(contact.contact_id, message.state)
 
   if (message.state === 'verified') {
     if (message.verified === 'true' && participantValidated && (
@@ -1236,7 +1087,7 @@ const adminMessage = async (message) => {
           },
         ]
 
-        // Validation happens here
+        // Non-nested validation happens here
         // (eldersonar) Check if we have submission requirments
         if (pdf.presentation_definition.submission_requirements) {
           // (eldersonar) Execute if there are any of input descriptors match the submission requirements group value
@@ -1402,70 +1253,6 @@ const adminMessage = async (message) => {
               console.log(proofResult)
               console.log(fieldsValidationResult)
 
-              // console.log("Original presentations array")
-              // console.log("")
-              // console.log(contact.Traveler.dataValues.proof_result_list.presentations)
-              // console.log("")
-
-              // let successFlag = null
-
-              // for (let x = 0; x < contact.Traveler.dataValues.proof_result_list.presentations.length; x++) {
-              //   console.log(contact.Traveler.dataValues.proof_result_list.presentations[x])
-
-              //   console.log("this is an index count ---------------- ", x)
-
-              //   // Get all the object keys
-              //   let keys = Object.keys(contact.Traveler.dataValues.proof_result_list.presentations[x])
-
-              //   let listElement = {
-              //     [inputDescriptors[i].name]: {
-              //       "result": true,
-              //       presentation: {}
-              //     }
-              //   }
-
-              //   console.log("keys")
-              //   console.log(keys)
-              //   console.log("keys")
-
-              //   let proofList = contact.Traveler.dataValues.proof_result_list.presentations[x]
-
-              //   let key = keys.join()
-
-              //   console.log("checkkkkkkkkkkkkkkkkkkkkkk")
-              //   console.log(inputDescriptors[i].name === key)
-              //   console.log(inputDescriptors[i].name)
-              //   console.log(key)
-
-              //   if (inputDescriptors[i].name === key) {
-              //     successFlag = true
-              //     // keys.map(y => {
-              //     //   proofList[y] = listElement[y]
-              //     //   console.log("map magic")
-              //     //   console.log(proofList[y])
-              //     // })
-
-              //     proofList[keys[0]] = listElement[keys[0]]
-              //   }
-
-              //   console.log("this is an updated list")
-              //   console.log(proofList)
-
-              //   let presentations = {}
-              //   presentations.presentations = proofList
-
-              //   // Update traveler's proof result list
-              //   await Travelers.updateProofResultList(contact.contact_id, presentations)
-
-              //   // Break out of outer loop if validation failed
-              //   if (successFlag) {
-              //     console.log("breakkkkkkkkkkkkkkkkkkkkkkk")
-              //     break
-              //   } else {
-              //     console.log("continnueeeeeeeeeeeeeeeeeeee")
-              //   }
-
-              // }
 
               // (eldersonar) Hanlding additional manual validation for non-nested submission requirements
               // Check if all level validation passed
@@ -1473,401 +1260,88 @@ const adminMessage = async (message) => {
                 console.log(
                   'Hanlding additional manual validation for non-nested submission requirements ',
                 )
-                // --------------------------- Handling and storing success -------------------------
-                console.log('Original presentations array')
-                console.log('')
-                console.log(
-                  contact.Traveler.dataValues.proof_result_list.presentations,
-                )
-                console.log('')
 
-                let successFlag = null
-
-                for (
-                  let x = 0;
-                  x <
-                  contact.Traveler.dataValues.proof_result_list.presentations
-                    .length;
-                  x++
-                ) {
-                  console.log(
-                    contact.Traveler.dataValues.proof_result_list.presentations[
-                    x
-                    ],
-                  )
-
-                  // Get all the object keys
-                  let keys = Object.keys(
-                    contact.Traveler.dataValues.proof_result_list.presentations[
-                    x
-                    ],
-                  )
-
-                  // Key to string
-                  let key = keys.join()
-                  let passedBusinessLogic = true
-
-                  //const supportedVaccineCodes = ['JSN', 'MOD', 'PFR', 'ASZ']
-
-                  // Check if the vaccine is approved by Aruba
-                  //if (
-                  //  contact.Traveler.dataValues.proof_result_list.presentations[
-                  //    x
-                  //  ].Vaccination
-                  //) {
-                  //  if (attributes.vaccine_manufacturer_code) {
-                  //    // Check vaccine manufacturer
-                  //    if (
-                  //      supportedVaccineCodes.includes(
-                  //        attributes.vaccine_manufacturer_code.raw,
-                  //     )
-                  //    ) {
-                  //      console.log('Your vaccine is accepted by Aruba!')
-                  //    } else {
-                  //      console.log('Your vaccine is not accepted by Aruba!')
-
-                  //      passedBusinessLogic = false
-                  //    }
-                  //  }
-                  //}
-                  // Check if the lab test is negative
+                if (attributes.lab_result && attributes.lab_specimen_collected_date) {
+                  console.log(attributes.lab_specimen_collected_date.raw * 1000)
+                  console.log(DateTime.local().plus({days: -3}).ts)
                   if (
-                    contact.Traveler.dataValues.proof_result_list.presentations[
-                      x
-                    ].Lab_Result
+                    ((attributes.lab_result.raw === 'Negative') &&
+                      attributes.lab_specimen_collected_date.raw * 1000 >
+                      DateTime.local().plus({ days: -3 }).ts)
                   ) {
-                    if (attributes.lab_result) {
-                      // Check vaccine manufacturer
-                      if (attributes.lab_result.raw === 'Negative') {
-                        console.log('You were not tested COVID positive!')
-                      } else {
-                        console.log('You were tested COVID positive!')
-
-                        passedBusinessLogic = false
-                      }
-                    }
+                    credentialVerifiedAttributes = credentialAttributes
                   }
-
-                  console.log(passedBusinessLogic)
-
-                  if (passedBusinessLogic) {
-                    console.log('Passed business logic')
-                    // Make sure to update the correct presentation result
-                    if (inputDescriptors[i].name === key) {
-                      successFlag = true
-
-                      // Set check result to true
-                      const list = contact.Traveler.dataValues.proof_result_list.presentations.map(
-                        (item) => {
-                          if (Object.keys(item).join() === key) {
-                            item[key].result = true
-                            item[key].presentation = attributes
-                          }
-                          return item
-                        },
-                      )
-
-                      let finalList = {}
-                      finalList.presentations = list
-
-                      // Update traveler's proof result list
-                      await Travelers.updateProofResultList(
-                        contact.contact_id,
-                        finalList,
-                      )
-                    }
-                    // (eldersonar) Break out of outer loop if successfully processed validation
-                    if (successFlag) {
-                      console.log('break')
-                      break
-                    }
-                  } else {
-                    console.log('Failed business logic')
-
-                    // Make sure to update the correct presentation result
-                    if (inputDescriptors[i].name === key) {
-                      successFlag = true
-
-                      // Set check result to false
-                      const list = contact.Traveler.dataValues.proof_result_list.presentations.map(
-                        (item) => {
-                          if (Object.keys(item)[0] === key) {
-                            item[key].result = false
-                            item[key].presentation = attributes
-                          }
-                          return item
-                        },
-                      )
-
-                      let finalList = {}
-                      finalList.presentations = list
-
-                      // Update traveler's proof result list
-                      await Travelers.updateProofResultList(
-                        contact.contact_id,
-                        finalList,
-                      )
-                    }
-                  }
-                  // (eldersonar) Break out of outer loop if successfully processed validation
-                  if (successFlag) {
-                    console.log('break')
-                    break
-                  }
+                } else {
+                  console.log("Haven't meet any of the reqs")
                 }
 
-                // Get updated contact
-                const updatedContact = await Contacts.getContactByConnection(
-                  message.connection_id,
-                  ['Traveler'],
-                )
 
-                // (eldersonar) Further validation of presentations. Issue a single trusted traveler based on presentation options
+                console.log('Issuing trusted traveler credential.')
 
-                // (eldersonar) Handling the lab result and vaccination presentations
+                // credentialVerifiedAttributes = credentialAttributes
+                let schema_id = ''
+
+                // (eldersonar) Validate the privileges
                 if (
-                  updatedContact.Traveler.dataValues.proof_result_list
-                    .presentations.length === 2
+                  governance &&
+                  privileges.includes('issue_trusted_traveler')
                 ) {
-                  let results = []
-
-                  for (
-                    let v = 0;
-                    v <
-                    updatedContact.Traveler.dataValues.proof_result_list
-                      .presentations.length;
-                    v++
-                  ) {
+                  for (let i = 0; i < governance.actions.length; i++) {
+                    // (eldersonar) Get schema id for trusted traveler
                     if (
-                      updatedContact.Traveler.dataValues.proof_result_list
-                        .presentations[v].Lab_Result &&
-                      updatedContact.Traveler.dataValues.proof_result_list
-                        .presentations[v].Lab_Result.result === true
+                      governance.actions[i].name ===
+                      'issue_trusted_traveler'
                     ) {
-                      results.push(true)
-                    } else if (
-                      updatedContact.Traveler.dataValues.proof_result_list
-                        .presentations[v].Lab_Result &&
-                      updatedContact.Traveler.dataValues.proof_result_list
-                        .presentations[v].Lab_Result.result === false
-                    ) {
-                      results.push(false)
-                    } else if (
-                      updatedContact.Traveler.dataValues.proof_result_list
-                        .presentations[v].Vaccination &&
-                      updatedContact.Traveler.dataValues.proof_result_list
-                        .presentations[v].Vaccination.result === true
-                    ) {
-                      results.push(true)
-                    } else if (
-                      updatedContact.Traveler.dataValues.proof_result_list
-                        .presentations[v].Vaccination &&
-                      updatedContact.Traveler.dataValues.proof_result_list
-                        .presentations[v].Vaccination.result === false
-                    ) {
-                      results.push(false)
+                      schema_id = governance.actions[i].details.schema
                     }
                   }
 
-                  if (results[0] === true && results[1] === true) {
-                    console.log('')
-                    console.log(
-                      'it passed for regular (non-nested) presentation definition',
-                    )
-                    console.log('')
-
-                    console.log('Issuing trusted traveler credential.')
-
-                    credentialVerifiedAttributes = credentialAttributes
-                    let schema_id = ''
-
-                    // (eldersonar) Validate the privileges
-                    if (
-                      governance &&
-                      privileges.includes('issue_trusted_traveler')
-                    ) {
-                      for (let i = 0; i < governance.actions.length; i++) {
-                        // (eldersonar) Get schema id for trusted traveler
-                        if (
-                          governance.actions[i].name ===
-                          'issue_trusted_traveler'
-                        ) {
-                          schema_id = governance.actions[i].details.schema
-                        }
-                      }
-
-                      // (eldersonar) Get schema information
-                      if (credentialVerifiedAttributes !== null) {
-                        let newCredential = {
-                          connectionID: message.connection_id,
-                          schemaID: schema_id,
-                          schemaVersion: schema_id.split(':')[3],
-                          schemaName: schema_id.split(':')[2],
-                          schemaIssuerDID: schema_id.split(':')[0],
-                          comment: '',
-                          attributes: credentialVerifiedAttributes,
-                        }
-
-                        // (mikekebert) Request issuance of the trusted_traveler credential
-                        console.log('ready to issue trusted traveler')
-
-                        // await Credentials.autoIssueCredential(
-                        //   newCredential.connectionID,
-                        //   undefined,
-                        //   undefined,
-                        //   newCredential.schemaID,
-                        //   newCredential.schemaVersion,
-                        //   newCredential.schemaName,
-                        //   newCredential.schemaIssuerDID,
-                        //   newCredential.comment,
-                        //   newCredential.attributes,
-                        // )
-
-                        // Update traveler's verification status
-                        await Travelers.updateVerificationStatus(
-                          updatedContact.contact_id,
-                          true,
-                        )
-
-                        credentialVerifiedAttributes = null
-                      } else {
-                        // (mikekebert) Send a basic message saying the verification was rejected because of business logic
-                        console.log('Presentation rejected: 2019-nCoV Detected')
-                        await AdminAPI.Connections.sendBasicMessage(
-                          message.connection_id,
-                          {
-                            content: 'INVALID_PROOF',
-                          },
-                        )
-
-                        // Update traveler's verification status
-                        await Travelers.updateVerificationStatus(
-                          contact.contact_id,
-                          false,
-                        )
-                      }
-                    } else {
-                      console.log('no governance or insufficient privileges')
-                      await AdminAPI.Connections.sendBasicMessage(
-                        message.connection_id,
-                        {
-                          content: 'INVALID_PRIVILEGES',
-                        },
-                      )
+                  // (eldersonar) Get schema information
+                  if (credentialVerifiedAttributes !== null) {
+                    let newCredential = {
+                      connectionID: message.connection_id,
+                      schemaID: schema_id,
+                      schemaVersion: schema_id.split(':')[3],
+                      schemaName: schema_id.split(':')[2],
+                      schemaIssuerDID: schema_id.split(':')[0],
+                      comment: '',
+                      attributes: credentialVerifiedAttributes,
                     }
+
+                    // (mikekebert) Request issuance of the trusted_traveler credential
+                    console.log('ready to issue trusted traveler')
+
+                    await Credentials.autoIssueCredential(
+                      newCredential.connectionID,
+                      undefined,
+                      undefined,
+                      newCredential.schemaID,
+                      newCredential.schemaVersion,
+                      newCredential.schemaName,
+                      newCredential.schemaIssuerDID,
+                      newCredential.comment,
+                      newCredential.attributes,
+                    )
+
+                    credentialVerifiedAttributes = null
                   } else {
-                    console.log(
-                      "Lab and/or Vaccine didn't pass... OR you've provided only 1 out of 2 presentations",
+                    // (mikekebert) Send a basic message saying the verification was rejected because of business logic
+                    await AdminAPI.Connections.sendBasicMessage(
+                      message.connection_id,
+                      {
+                        content: 'INVALID_PROOF',
+                      },
                     )
-                    console.log(results[0])
-                    console.log(results[1])
 
-                    if (results[0] === false || results[1] === false) {
-                      // Update traveler's verification status
-                      await Travelers.updateVerificationStatus(
-                        contact.contact_id,
-                        false,
-                      )
-                    }
                   }
-                  // (eldersonar) Handling the lab result presentation only
                 } else {
-                  console.log('Just the Lab')
-                  if (
-                    updatedContact.Traveler.dataValues.proof_result_list
-                      .presentations[0].Lab_Result.result === true
-                  ) {
-                    console.log('')
-                    console.log('it passed for nested presentation definition')
-                    console.log('')
-
-                    console.log('Issuing trusted traveler credential.')
-
-                    credentialVerifiedAttributes = credentialAttributes
-                    let schema_id = ''
-
-                    // (eldersonar) Validate the privileges
-                    if (
-                      governance &&
-                      privileges.includes('issue_trusted_traveler')
-                    ) {
-                      for (let i = 0; i < governance.actions.length; i++) {
-                        // (eldersonar) Get schema id for trusted traveler
-                        if (
-                          governance.actions[i].name ===
-                          'issue_trusted_traveler'
-                        ) {
-                          schema_id = governance.actions[i].details.schema
-                        }
-                      }
-
-                      // (eldersonar) Get schema information
-                      if (credentialVerifiedAttributes !== null) {
-                        let newCredential = {
-                          connectionID: message.connection_id,
-                          schemaID: schema_id,
-                          schemaVersion: schema_id.split(':')[3],
-                          schemaName: schema_id.split(':')[2],
-                          schemaIssuerDID: schema_id.split(':')[0],
-                          comment: '',
-                          attributes: credentialVerifiedAttributes,
-                        }
-
-                        // (mikekebert) Request issuance of the trusted_traveler credential
-                        console.log('ready to issue trusted traveler')
-
-                        // await Credentials.autoIssueCredential(
-                        //   newCredential.connectionID,
-                        //   undefined,
-                        //   undefined,
-                        //   newCredential.schemaID,
-                        //   newCredential.schemaVersion,
-                        //   newCredential.schemaName,
-                        //   newCredential.schemaIssuerDID,
-                        //   newCredential.comment,
-                        //   newCredential.attributes,
-                        // )
-
-                        // Update traveler's verification status
-                        await Travelers.updateVerificationStatus(
-                          updatedContact.contact_id,
-                          true,
-                        )
-
-                        credentialVerifiedAttributes = null
-                      } else {
-                        // (mikekebert) Send a basic message saying the verification was rejected because of business logic
-                        await AdminAPI.Connections.sendBasicMessage(
-                          message.connection_id,
-                          {
-                            content: 'INVALID_PROOF',
-                          },
-                        )
-
-                        // Update traveler's verification status
-                        await Travelers.updateVerificationStatus(
-                          contact.contact_id,
-                          false,
-                        )
-                      }
-                    } else {
-                      console.log('no governance or insificient privilieges')
-                      await AdminAPI.Connections.sendBasicMessage(
-                        message.connection_id,
-                        {
-                          content: 'INVALID_PRIVILEGES',
-                        },
-                      )
-                    }
-                  } else {
-                    console.log("Lab didn't pass...")
-
-                    // Update traveler's verification status
-                    await Travelers.updateVerificationStatus(
-                      contact.contact_id,
-                      false,
-                    )
-                  }
+                  console.log('no governance or insificient privilieges')
+                  await AdminAPI.Connections.sendBasicMessage(
+                    message.connection_id,
+                    {
+                      content: 'INVALID_PRIVILEGES',
+                    },
+                  )
                 }
               } else {
                 console.log('')
@@ -1878,422 +1352,13 @@ const adminMessage = async (message) => {
                 console.log('')
               }
             }
-
-            // Handle nested submission requirements validation
-          } else {
-            console.log(
-              '...........Handling nested submission requrements validation.................',
-            )
-
-            // TODO: fix this not to trigger issuing from_nested.length * credentials
-            for (
-              let g = 0;
-              g <
-              pdf.presentation_definition.submission_requirements[0].from_nested
-                .length;
-              g++
-            ) {
-              let chosenDescriptors = []
-
-              // Get nested descriptors
-              for (let f = 0; f < inputDescriptors.length; f++) {
-                if (
-                  inputDescriptors[f].group.includes(
-                    pdf.presentation_definition.submission_requirements[0]
-                      .from_nested[g].from,
-                  )
-                ) {
-                  chosenDescriptors.push(inputDescriptors[f])
-                }
-              }
-
-              console.log('these are the chosen descriptors')
-              console.log(g)
-              console.log(chosenDescriptors)
-
-              for (let i = 0; i < chosenDescriptors.length; i++) {
-                console.log('')
-                console.log(
-                  `Comparing proof with ${chosenDescriptors[i].name} input descriptor`,
-                )
-                console.log('')
-
-                let fields = []
-                let proofResult = false
-
-                let fieldsValidationResult = false
-
-                // (eldersonar) Execute if there are any of input descriptors match the submission requirements group value
-                if (
-                  chosenDescriptors[i].group.includes(
-                    pdf.presentation_definition.submission_requirements[0]
-                      .from_nested[g].from,
-                  )
-                ) {
-                  // Get an array of attributes
-                  for (
-                    let j = 0;
-                    j < chosenDescriptors[i].constraints.fields.length;
-                    j++
-                  ) {
-                    const fieldPath = chosenDescriptors[i].constraints.fields[
-                      j
-                    ].path
-                      .join('')
-                      .split('$.')[1] // (eldersonar) TODO: turn into a loop. This will be not valid if have more than 1 path in the array
-
-                    fields.push(fieldPath)
-                  }
-                }
-
-                // (eldersonar) Get and sort the list of proof attributes and descriptor fields
-                const proofAttributeKeys = Object.keys(attributes)
-                const proofPredicateKeys = Object.keys(predicates)
-                const predicatesAndArrays = proofAttributeKeys.concat(
-                  proofPredicateKeys,
-                )
-                const sortedProofFields = predicatesAndArrays.sort(function (
-                  a,
-                  b,
-                ) {
-                  return a.localeCompare(b)
-                })
-                const sortedDescriptorFields = fields.sort(function (a, b) {
-                  return a.localeCompare(b)
-                })
-
-                // (eldersonar) Start validation
-                if (sortedProofFields.length && sortedDescriptorFields.length) {
-                  // (eldersonar) Check if there is no array match (no credential match or no predicate match)
-                  if (
-                    JSON.stringify(sortedProofFields) !=
-                    JSON.stringify(sortedDescriptorFields)
-                  ) {
-                    console.log('comparison failed')
-
-                    // (eldersonar) Get leftover fields with the filter
-                    let nonDuplicateFields = sortedProofFields.filter(
-                      (val) => !sortedDescriptorFields.includes(val),
-                    )
-
-                    for (
-                      let k = 0;
-                      k < chosenDescriptors[i].constraints.fields.length;
-                      k++
-                    ) {
-                      // (eldersonar) Check if input descriptor has in-field conditional logic
-                      if (
-                        chosenDescriptors[i].constraints.fields[k].filter.oneOf
-                      ) {
-                        for (
-                          let l = 0;
-                          l <
-                          chosenDescriptors[i].constraints.fields[k].filter
-                            .oneOf.length;
-                          l++
-                        ) {
-                          for (let m = 0; m < nonDuplicateFields.length; m++) {
-                            const prefix = '$.'
-                            let lookupField = ''
-                            lookupField += prefix
-                            lookupField += nonDuplicateFields[m]
-
-                            // (eldersonar) If we can find the field name in the list of in-field predicates
-                            if (
-                              chosenDescriptors[i].constraints.fields[
-                                k
-                              ].filter.oneOf[
-                                l
-                              ].dependent_fields[0].path.includes(lookupField)
-                            ) {
-                              // (eldersonar) Removing predicate from the list of sorted fields
-                              const index = sortedProofFields.indexOf(
-                                nonDuplicateFields[m],
-                              )
-                              if (index > -1) {
-                                sortedProofFields.splice(index, 1)
-                              }
-
-                              console.log(sortedProofFields)
-                              console.log(sortedDescriptorFields)
-                              console.log(
-                                JSON.stringify(sortedProofFields) ===
-                                JSON.stringify(sortedDescriptorFields),
-                              )
-
-                              // (eldersonar) Check if arrays match after the predicates were removed
-                              if (
-                                JSON.stringify(sortedProofFields) ===
-                                JSON.stringify(sortedDescriptorFields)
-                              ) {
-                                console.log('')
-                                console.log(
-                                  '_____________________________________________',
-                                )
-                                console.log(
-                                  'Validation of proof was successful.',
-                                )
-
-                                fieldsValidationResult = validateFieldByField(
-                                  attributes,
-                                  chosenDescriptors[i],
-                                )
-
-                                proofResult = true
-                              } else {
-                                // console.log("Validation failed.")
-                                proofResult = false
-                              }
-                            } else {
-                              // console.log("Validation failed. No match was found.")
-                              proofResult = false
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                  // (eldersonar) Perfect match, proof fields are validated!
-                  else {
-                    console.log('')
-                    console.log('_____________________________________________')
-                    console.log('Validation of proof was successful.')
-
-                    // (eldersonar) Value validation happens here
-                    fieldsValidationResult = validateFieldByField(
-                      attributes,
-                      chosenDescriptors[i],
-                    )
-
-                    proofResult = true
-                  }
-                } else {
-                  console.log('Error: lacking data for validation')
-                }
-
-                console.log(proofResult)
-                console.log(fieldsValidationResult)
-                console.log(chosenDescriptors[i].name)
-
-                // // Update traveler's verification status
-                // await Travelers.updateProofResultList(contact.contact_id, list)
-
-                // Check if all level validation passed
-                if (proofResult && fieldsValidationResult) {
-                  console.log('')
-                  console.log('it passed 2')
-                  console.log('')
-                  console.log('')
-
-                  // --------------------------- Handling and storing success -------------------------
-                  console.log('Original presentations array')
-                  console.log('')
-                  console.log(
-                    contact.Traveler.dataValues.proof_result_list.presentations,
-                  )
-                  console.log('')
-
-                  let successFlag = null
-
-                  for (
-                    let x = 0;
-                    x <
-                    contact.Traveler.dataValues.proof_result_list.presentations
-                      .length;
-                    x++
-                  ) {
-                    console.log(
-                      contact.Traveler.dataValues.proof_result_list
-                        .presentations[x],
-                    )
-
-                    // // Get all the object keys
-                    let keys = Object.keys(
-                      contact.Traveler.dataValues.proof_result_list
-                        .presentations[x],
-                    )
-
-                    // (eldersonar) TODO: Locate and remove redundant code here
-                    let listElement = {
-                      [inputDescriptors[i].name]: {
-                        result: true,
-                        presentation: {},
-                      },
-                    }
-
-                    console.log('listElement')
-                    console.log(listElement)
-
-                    // // Proof object reasignment
-                    let proofList =
-                      contact.Traveler.dataValues.proof_result_list
-                        .presentations[x]
-
-                    console.log('proofList')
-                    console.log(proofList)
-
-                    // Keys to string
-                    let key = keys.join()
-
-                    console.log('key')
-                    console.log(key)
-
-                    // (eldersonar) Check if we are updating correct proof element
-                    if (inputDescriptors[i].name === key) {
-                      successFlag = true
-                      proofList[keys[0]] = listElement[keys[0]]
-                      // Same thing but handles muliple keys
-                      // keys.map(y => {
-                      //   proofList[y] = listElement[y]
-                      //   console.log("map magic")
-                      //   console.log(proofList[y])
-                      // })
-                    }
-
-                    console.log('proofList')
-                    console.log(proofList)
-
-                    // console.log("this is an updated list")
-                    // console.log(proofList)
-
-                    // Proof result list (presentation ) shallow copy
-                    let presentations = [
-                      ...contact.Traveler.dataValues.proof_result_list
-                        .presentations,
-                    ]
-
-                    console.log('presentations')
-                    console.log(presentations)
-
-                    // Rebuilding object list
-                    presentations.presentations = proofList[x]
-
-                    console.log('presentations')
-                    console.log(presentations)
-
-                    // Set check result to true
-                    const list = presentations.map((item) => {
-                      if (Object.keys(item) === key) {
-                        item.result = true
-                      }
-                      return item
-                    })
-
-                    console.log('list')
-                    console.log(list)
-
-                    let finalList = {}
-                    finalList.presentations = list
-
-                    // Update traveler's proof result list
-                    await Travelers.updateProofResultList(
-                      contact.contact_id,
-                      finalList,
-                    )
-
-                    // Break out of outer loop if successfully passed val
-                    if (successFlag) {
-                      console.log('break')
-                      break
-                    }
-                  }
-
-                  // --------------------------- Handling and storing success -------------------------
-
-                  console.log('Issuing trusted traveler credential.')
-
-                  credentialVerifiedAttributes = credentialAttributes
-                  let schema_id = ''
-
-                  // (eldersonar) Validate the privileges
-                  if (
-                    governance &&
-                    privileges.includes('issue_trusted_traveler')
-                  ) {
-                    for (let i = 0; i < governance.actions.length; i++) {
-                      // (eldersonar) Get schema id for trusted traveler
-                      if (
-                        governance.actions[i].name === 'issue_trusted_traveler'
-                      ) {
-                        schema_id = governance.actions[i].details.schema
-                      }
-                    }
-
-                    // (eldersonar) Get schema information
-                    if (credentialVerifiedAttributes !== null) {
-                      let newCredential = {
-                        connectionID: message.connection_id,
-                        schemaID: schema_id,
-                        schemaVersion: schema_id.split(':')[3],
-                        schemaName: schema_id.split(':')[2],
-                        schemaIssuerDID: schema_id.split(':')[0],
-                        comment: '',
-                        attributes: credentialVerifiedAttributes,
-                      }
-
-                      // (mikekebert) Request issuance of the trusted_traveler credential
-                      console.log('ready to issue trusted traveler')
-
-                      // await Credentials.autoIssueCredential(
-                      //   newCredential.connectionID,
-                      //   undefined,
-                      //   undefined,
-                      //   newCredential.schemaID,
-                      //   newCredential.schemaVersion,
-                      //   newCredential.schemaName,
-                      //   newCredential.schemaIssuerDID,
-                      //   newCredential.comment,
-                      //   newCredential.attributes,
-                      // )
-
-                      // Update traveler's verification status
-                      await Travelers.updateVerificationStatus(
-                        contact.contact_id,
-                        true,
-                      )
-
-                      credentialVerifiedAttributes = null
-                    } else {
-                      // (mikekebert) Send a basic message saying the verification was rejected because of business logic
-                      console.log('Presentation rejected: 2019-nCoV Detected')
-                      await AdminAPI.Connections.sendBasicMessage(
-                        message.connection_id,
-                        {
-                          content: 'INVALID_PROOF',
-                        },
-                      )
-
-                      // Update traveler's verification status
-                      await Travelers.updateVerificationStatus(
-                        contact.contact_id,
-                        false,
-                      )
-                    }
-                  } else {
-                    console.log('no governance or insufficient privilieges')
-                    await AdminAPI.Connections.sendBasicMessage(
-                      message.connection_id,
-                      {
-                        content: 'INVALID_PRIVILEGES',
-                      },
-                    )
-                  }
-
-                  // (eldersonar) Validation failed
-                } else {
-                  console.log('')
-                  console.log('The field comparison failed.')
-                  console.log('')
-                }
-              }
-            }
           }
         }
       }
     } else if (message.verified === 'true' && !participantValidated && (
-      (!message.presentation.requested_proof.self_attested_attrs &&
-        !Object.keys(message.presentation.requested_proof.self_attested_attrs)
-          .length))) {
+      (message.presentation.requested_proof.self_attested_attrs &&
+        Object.keys(message.presentation.requested_proof.self_attested_attrs)
+          .length === 0))) {
       // (eldersonar) Send a basic message
       console.log("I'm here")
       console.log(message.state)
@@ -2302,18 +1367,17 @@ const adminMessage = async (message) => {
         content:
           "We're sorry, but we don't currently recognize the issuer of your credential and cannot approve it at this time.",
       })
-      // (eldersonar) Handle passport and travelers
+      // (eldersonar) Handle passport and demographic
     } else {
       console.log("self-attested")
-      // }
-      // else {
+      console.log(message.presentation.requested_proof)
 
       // (eldersonar) Get contact id
       let contact = await Contacts.getContactByConnection(message.connection_id, [])
       console.log("----this is the contact_id ----")
       console.log("contact id is: " + contact.contact_id)
 
-      // (edersonar) Create travelers
+      // (edersonar) Create demographic
       await Demographics.updateOrCreateDemographic(
         contact.contact_id,
         message.presentation.requested_proof.self_attested_attrs.email,
