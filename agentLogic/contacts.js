@@ -1,11 +1,8 @@
 const AdminAPI = require('../adminAPI')
 const Websockets = require('../websockets.js')
-
 let Connections = require('../orm/connections.js')
 let Contacts = require('../orm/contacts.js')
 let ContactsCompiled = require('../orm/contactsCompiled.js')
-let Demographics = require('../orm/demographics.js')
-let Passports = require('../orm/passports.js')
 
 // Perform Agent Business Logic
 

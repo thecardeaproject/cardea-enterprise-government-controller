@@ -2,11 +2,11 @@
   "@context": [
     "https://github.com/hyperledger/aries-rfcs/blob/main/concepts/0430-machine-readable-governance-frameworks/context.jsonld"
   ],
-  "name": "Aruba COVID Governance",
+  "name": "Cardea COVID Governance",
   "version": "0.1",
   "format": "1.0",
   "id": "<uuid>",
-  "description": "This document describes COVID health and travel governance for the nation of Aruba in a machine readable way.",
+  "description": "This document describes COVID health and travel governance in a machine readable way.",
   "last_updated": "2021-06-10",
   "docs_uri": "need_to_create",
   "data_uri": "need_to_create",
@@ -60,21 +60,21 @@
   ],
   "participants": [
     {
-      "name": "Aruba Government",
+      "name": "Government of <your country here>",
       "id": "F3qZ8YSpgXLdLqcEC6GSFi",
       "describe": {
-        "label": "Aruba",
-        "sublabel": "Aruba Government",
+        "label": "<your country here>",
+        "sublabel": "Government of <your country here>",
         "website": "issuinggovernmentsite.org",
         "email": "credential_manager@issuinggovernmentsite.org"
       }
     },
     {
-      "name": "General Obeorthot Hospital of Aruba",
+      "name": "General Obeorthot Hospital of <your country here>",
       "id": "FE9ge78jQSzYU4YrKuKzUG",
       "describe": {
         "label": "Obeorthot Hospital",
-        "sublabel": "General Obeorthot Hospital of Aruba",
+        "sublabel": "General Obeorthot Hospital of <your country here>",
         "website": "issuinglabsite.com",
         "email": "credential_manager@issuinglabsite.com"
       }
@@ -428,7 +428,7 @@
         "startmessage": "question",
         "question_answer": [
           {
-            "question": "Have you received a Medical Release credential from the Bronx RHIO before?"
+            "question": "Have you received a Medical Release credential from the <your lab participant name here> before?"
           },
           {
             "question_detail": "Please select an option below:"
@@ -685,7 +685,7 @@
       "data": {
         "protocol": "https://didcomm.org/basic-message/1.0/",
         "startmessage": "send-message",
-        "content": "We're sorry, your country is not approved for entry by the government of Aruba"
+        "content": "We're sorry, your country is not approved for entry by the government of <your country here>"
       }
     },
     {

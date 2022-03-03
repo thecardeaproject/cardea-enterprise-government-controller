@@ -74,67 +74,6 @@ const getPresentationDefinition = async () => {
   }
 }
 
-//------------ (eldersonar) TODO: remove after trial-------------
-const getLabPresentationDefinition = async () => {
-  try {
-    const governance = await getGovernance()
-
-    // Presentation definition file
-    const pdfLink = 'http://localhost:3100/api/lab-presentation-exchange'
-
-    const response = await axios({
-      method: 'GET',
-      url: pdfLink,
-      httpsAgent: agent,
-    }).then((res) => {
-      return res.data
-    })
-
-    return response
-  } catch (error) {
-    console.error('Presentation Definition File Request Error')
-    // console.log(error.response.status)
-    console.log(error)
-
-    // (eldersonar) Do we handle specific codes or handle all errors as one?
-    // if (error.response.status)
-    return undefined
-
-    // throw error
-  }
-}
-
-const getLabVaccinePresentationDefinition = async () => {
-  try {
-    const governance = await getGovernance()
-
-    // Presentation definition file
-    const pdfLink =
-      'http://localhost:3100/api/lab-vaccine-presentation-exchange'
-
-    const response = await axios({
-      method: 'GET',
-      url: pdfLink,
-      httpsAgent: agent,
-    }).then((res) => {
-      return res.data
-    })
-
-    return response
-  } catch (error) {
-    console.error('Presentation Definition File Request Error')
-    // console.log(error.response.status)
-    console.log(error)
-
-    // (eldersonar) Do we handle specific codes or handle all errors as one?
-    // if (error.response.status)
-    return undefined
-
-    // throw error
-  }
-}
-//------------ (eldersonar) TODO: remove after trial-------------
-
 // Get DID
 const getDID = async () => {
   try {
