@@ -20,7 +20,7 @@ router.post('/topic/connections', async (req, res, next) => {
   res.status(200).send('Ok')
 
   // (eldersonar) Send a proof request to the established connection
-  if (connectionMessage.state === "active")
+  if (connectionMessage.state === 'active')
     Presentations.requestIdentityPresentation(connectionMessage.connection_id)
 
   await Contacts.adminMessage(connectionMessage)
@@ -44,6 +44,16 @@ router.post('/topic/present_proof', async (req, res, next) => {
   console.log('Presentation Details:')
   const presMessage = req.body
   console.log(presMessage)
+
+  // (AmmonBurgi) Store the presentation on the opening state. Update the presentation on the other states.
+  if (
+    presMessage.state === 'request_sent' ||
+    presMessage.state === 'request_received'
+  ) {
+    await Presentations.createPresentationReports(presMessage)
+  } else {
+    await Presentations.updatePresentationReports(presMessage)
+  }
 
   res.status(200).send('Ok')
   await Presentations.adminMessage(presMessage)

@@ -43,7 +43,7 @@ Passport.init(
     type: {
       type: DataTypes.TEXT,
     },
-    code: {
+    issuing_country: {
       type: DataTypes.TEXT,
     },
     authority: {
@@ -90,7 +90,7 @@ const createPassport = async function (
   date_of_issue,
   date_of_expiration,
   type,
-  code,
+  issuing_country,
   authority,
   photo,
 ) {
@@ -109,7 +109,7 @@ const createPassport = async function (
       date_of_issue: date_of_issue,
       date_of_expiration: date_of_expiration,
       type: type,
-      code: code,
+      issuing_country: issuing_country,
       authority: authority,
       photo: photo,
       created_at: timestamp,
@@ -133,7 +133,7 @@ const createOrUpdatePassport = async function (
   date_of_issue,
   date_of_expiration,
   type,
-  code,
+  issuing_country,
   authority,
   photo,
 ) {
@@ -164,14 +164,13 @@ const createOrUpdatePassport = async function (
             date_of_issue: date_of_issue,
             date_of_expiration: date_of_expiration,
             type: type,
-            code: code,
+            issuing_country: issuing_country,
             authority: authority,
             photo: photo,
             created_at: timestamp,
             updated_at: timestamp,
           })
         } else {
-          console.log('Updating Passport')
           await Passport.update(
             {
               contact_id: contact_id,
@@ -185,7 +184,7 @@ const createOrUpdatePassport = async function (
               date_of_issue: date_of_issue,
               date_of_expiration: date_of_expiration,
               type: type,
-              code: code,
+              issuing_country: issuing_country,
               authority: authority,
               photo: photo,
               created_at: timestamp,
@@ -254,7 +253,7 @@ const updatePassport = async function (
   date_of_issue,
   date_of_expiration,
   type,
-  code,
+  issuing_country,
   authority,
   photo,
 ) {
@@ -274,7 +273,7 @@ const updatePassport = async function (
         date_of_issue: date_of_issue,
         date_of_expiration: date_of_expiration,
         type: type,
-        code: code,
+        issuing_country: issuing_country,
         authority: authority,
         photo: photo,
         created_at: timestamp,

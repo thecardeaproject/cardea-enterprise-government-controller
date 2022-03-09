@@ -7,14 +7,22 @@ const updateOrCreateDemographic = async function (
   contact_id,
   email,
   phone,
-  address,
+  street_address,
+  city,
+  state_province_region,
+  postal_code,
+  country,
 ) {
   try {
     await Demographics.createOrUpdateDemographic(
       contact_id,
       email,
       phone,
-      address,
+      street_address,
+      city,
+      state_province_region,
+      postal_code,
+      country,
     )
 
     const contact = await ContactsCompiled.readContact(contact_id, [
