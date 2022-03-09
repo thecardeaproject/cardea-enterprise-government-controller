@@ -64,7 +64,7 @@ exports.up = function (db) {
         [
           'organization',
           JSON.stringify({
-            organizationName: 'Government',
+            organizationName: 'Health Lab',
           }),
         ],
       )
