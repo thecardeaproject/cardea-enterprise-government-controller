@@ -1,14 +1,14 @@
 require('dotenv').config()
 const axios = require('axios')
 const bodyParser = require('body-parser')
-const { DateTime } = require('luxon')
+const {DateTime} = require('luxon')
 const express = require('express')
 const http = require('http')
 const jwt = require('jsonwebtoken')
 const passport = require('passport')
 const Sequelize = require('sequelize')
 const session = require('express-session')
-const { v4: uuid } = require('uuid')
+const {v4: uuid} = require('uuid')
 
 const Util = require('./util')
 
@@ -31,11 +31,11 @@ const ContactsCompiled = require('./orm/contactsCompiled')
 const Credentials = require('./agentLogic/credentials')
 const Governance = require('./agentLogic/governance')
 const Images = require('./agentLogic/images')
-const { getOrganization } = require('./agentLogic/settings')
+const {getOrganization} = require('./agentLogic/settings')
 // const Passenger = require('./agentLogic/passenger')
 const Users = require('./agentLogic/users')
 
-app.use(bodyParser.urlencoded({ extended: false }))
+app.use(bodyParser.urlencoded({extended: false}))
 app.use(bodyParser.json())
 
 app.use(passport.initialize())
@@ -43,14 +43,15 @@ require('./passport-config')(passport)
 
 server.listen(process.env.CONTROLLERPORT || 3100, () =>
   console.log(
-    `Server listening at http://localhost:${process.env.CONTROLLERPORT || 3100
+    `Server listening at http://localhost:${
+      process.env.CONTROLLERPORT || 3100
     }`,
     `\n Agent Address: ${process.env.AGENTADDRESS || 'localhost:8150'}`,
   ),
 )
 
 const agentWebhookRouter = require('./agentWebhook')
-const { connect } = require('http2')
+const {connect} = require('http2')
 
 // Send all cloud agent webhooks posting to the agent webhook router
 app.use('/api/controller-webhook', agentWebhookRouter)
@@ -155,7 +156,7 @@ const verifySession = (req, res, next) => {
 app.post('/api/user/log-in', (req, res, next) => {
   // Empty/data checks
   if (!req.body.username || !req.body.password) {
-    res.json({ error: 'All fields must be filled out.' })
+    res.json({error: 'All fields must be filled out.'})
   } else if (!Util.validateAlphaNumeric(req.body.username)) {
     res.json({
       error: 'Username or password is wrong.',
@@ -165,11 +166,11 @@ app.post('/api/user/log-in', (req, res, next) => {
       error: 'Username or password is wrong.',
     })
   } else if (!req.body.password || !req.body.username) {
-    res.json({ error: 'All fields must be filled out.' })
+    res.json({error: 'All fields must be filled out.'})
   } else {
     passport.authenticate('local', (err, user, info) => {
       if (err) throw err
-      if (!user) res.json({ error: 'Username or password is wrong.' })
+      if (!user) res.json({error: 'Username or password is wrong.'})
       else {
         req.logIn(user, (err) => {
           if (err) throw err
@@ -198,8 +199,8 @@ app.post('/api/user/log-out', (req, res) => {
       if (!err) {
         res
           .status(200)
-          .clearCookie('sessionId', { path: '/' })
-          .json({ status: 'Session destroyed.' })
+          .clearCookie('sessionId', {path: '/'})
+          .json({status: 'Session destroyed.'})
       } else {
         res.send("Couldn't destroy the session.")
       }
@@ -214,13 +215,13 @@ app.post('/api/user/token/validate', async (req, res) => {
 
     const unusedtoken = await Users.getUserByToken(req.body.token)
     if (!unusedtoken) {
-      res.json({ error: 'The link has expired.' })
+      res.json({error: 'The link has expired.'})
     } else {
-      res.status(200).json({ status: 'The link is valid.' })
+      res.status(200).json({status: 'The link is valid.'})
     }
   } catch (err) {
     console.error(err)
-    res.json({ error: 'The link has expired.' })
+    res.json({error: 'The link has expired.'})
   }
 })
 
@@ -230,13 +231,13 @@ app.post('/api/user/password/update', async (req, res) => {
   } catch (err) {
     console.error(err)
     console.log('The token has expired.')
-    res.json({ error: 'The link has expired.' })
+    res.json({error: 'The link has expired.'})
   }
 
   let user = undefined
 
   if (!req.body.password)
-    res.status(200).json({ error: 'All fields must be filled out.' })
+    res.status(200).json({error: 'All fields must be filled out.'})
   else if (!Util.validatePassword(req.body.password)) {
     res.json({
       error: 'Password must be at least 15 characters.',
@@ -245,15 +246,15 @@ app.post('/api/user/password/update', async (req, res) => {
     try {
       const validToken = await Users.getUserByToken(req.body.token)
       if (validToken.user_id !== req.body.id)
-        res.json({ error: 'The token did not match the user.' })
+        res.json({error: 'The token did not match the user.'})
     } catch (error) {
       throw error
     }
 
     user = await Users.updatePassword(req.body.id, req.body.password)
     if (!user)
-      res.status(200).json({ error: "The password couldn't be updated." })
-    else res.status(200).json({ status: 'Password updated.' })
+      res.status(200).json({error: "The password couldn't be updated."})
+    else res.status(200).json({status: 'Password updated.'})
   }
 })
 
@@ -268,15 +269,15 @@ app.post('/api/user/update', async (req, res) => {
     try {
       const verify = jwt.verify(req.body.token, process.env.JWT_SECRET)
     } catch (error) {
-      res.json({ error: 'The link has expired.' })
+      res.json({error: 'The link has expired.'})
       throw error
     }
 
     // Empty/data checks
     if (!req.body.email || !req.body.username || !req.body.password) {
-      res.json({ error: 'All fields must be filled out.' })
+      res.json({error: 'All fields must be filled out.'})
     } else if (!Util.validateEmail(req.body.email)) {
-      res.json({ error: 'Must be a valid email.' })
+      res.json({error: 'Must be a valid email.'})
     } else if (!Util.validateAlphaNumeric(req.body.username)) {
       res.json({
         error: 'Username must be least 3 characters long',
@@ -288,7 +289,7 @@ app.post('/api/user/update', async (req, res) => {
     } else {
       userByEmail = await Users.getUserByEmail(req.body.email)
       if (!userByEmail) {
-        res.json({ error: 'The user was not found.' })
+        res.json({error: 'The user was not found.'})
       } else {
         user = await Users.updateUser(
           userByEmail.user_id,
@@ -301,11 +302,11 @@ app.post('/api/user/update', async (req, res) => {
         )
 
         if (!user) {
-          res.json({ error: "The user couldn't be updated." })
+          res.json({error: "The user couldn't be updated."})
         } else if (user.error) {
           res.send(user.error)
         } else {
-          res.status(200).json({ status: 'User updated.' })
+          res.status(200).json({status: 'User updated.'})
         }
       }
     }
@@ -314,12 +315,12 @@ app.post('/api/user/update', async (req, res) => {
 
     // Empty/data checks
     if (!req.body.email) {
-      res.json({ error: 'All fields must be filled out.' })
+      res.json({error: 'All fields must be filled out.'})
     } else if (!Util.validateEmail(req.body.email)) {
-      res.json({ error: 'Must be a valid email.' })
+      res.json({error: 'Must be a valid email.'})
     } else {
       userByEmail = await Users.getUserByEmail(req.body.email)
-      if (!userByEmail) res.json({ error: 'The user was not found.' })
+      if (!userByEmail) res.json({error: 'The user was not found.'})
       user = await Users.updateUser(
         userByEmail.user_id,
         userByEmail.username,
@@ -333,9 +334,9 @@ app.post('/api/user/update', async (req, res) => {
       if (user.error) {
         res.send(user.error)
       } else if (!user) {
-        res.json({ error: "The user couldn't be updated." })
+        res.json({error: "The user couldn't be updated."})
       } else {
-        res.status(200).json({ status: 'User updated.' })
+        res.status(200).json({status: 'User updated.'})
       }
     }
   }
@@ -345,7 +346,7 @@ app.post('/api/user/update', async (req, res) => {
 app.get('/api/logo', async (req, res) => {
   try {
     const logo = await Images.getImagesByType('logo')
-    if (!logo) res.json({ error: 'The logo was not found.' })
+    if (!logo) res.json({error: 'The logo was not found.'})
     res.send(logo)
   } catch (err) {
     console.error(err)
@@ -362,7 +363,7 @@ app.get('/api/renew-session', verifySession, async (req, res) => {
 
   res
     .status(200)
-    .json({ id: user.user_id, username: user.username, roles: userRoles })
+    .json({id: user.user_id, username: user.username, roles: userRoles})
 })
 
 app.use('/', (req, res) => {

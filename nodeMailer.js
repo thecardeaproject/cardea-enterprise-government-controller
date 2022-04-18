@@ -48,10 +48,10 @@ const sendMail = async (message) => {
     } else {
       console.log('Message sent successfully!')
       console.log(nodemailer.getTestMessageUrl(info))
-  
+
       // only needed when using pooled connections
       transporter.close()
-    }    
+    }
   })
 }
 
