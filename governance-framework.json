@@ -61,7 +61,7 @@
   "participants": [
     {
       "name": "Government of <your country here>",
-      "id": "F3qZ8YSpgXLdLqcEC6GSFi",
+      "id": "6X9XQLXTsoTZKgxHsQWqmN",
       "describe": {
         "label": "<your country here>",
         "sublabel": "Government of <your country here>",
@@ -71,7 +71,7 @@
     },
     {
       "name": "General Obeorthot Hospital of <your country here>",
-      "id": "FE9ge78jQSzYU4YrKuKzUG",
+      "id": "RrwpXWyiUm1gD1Def3LXmQ",
       "describe": {
         "label": "Obeorthot Hospital",
         "sublabel": "General Obeorthot Hospital of <your country here>",
@@ -81,7 +81,7 @@
     },
     {
       "name": "Hilton Casino",
-      "id": "did:example:casino",
+      "id": "YGQY6s3twr1gyH542EigJP",
       "describe": {
         "label": "Hilton Resort and Casino",
         "sublabel": "Verifying Org",
@@ -104,7 +104,7 @@
       "when": {
         "any": [
           {"id": "did:example:hospital"},
-          {"id": "FE9ge78jQSzYU4YrKuKzUG"}
+          {"id": "RrwpXWyiUm1gD1Def3LXmQ"}
         ]
       }
     },
@@ -112,7 +112,7 @@
       "grant": ["travel_issuer"],
       "when": {
         "any": [
-          {"id": "F3qZ8YSpgXLdLqcEC6GSFi"}
+          {"id": "6X9XQLXTsoTZKgxHsQWqmN"}
         ]
       }
     },
@@ -120,7 +120,7 @@
       "grant": ["health_verifier"],
       "when": {
         "any": [
-          {"id": "F3qZ8YSpgXLdLqcEC6GSFi"}
+          {"id": "6X9XQLXTsoTZKgxHsQWqmN"}
         ]
       }
     },
@@ -128,7 +128,7 @@
       "grant": ["travel_verifier"],
       "when": {
         "any": [
-          {"id": "F3qZ8YSpgXLdLqcEC6GSFi"}
+          {"id": "6X9XQLXTsoTZKgxHsQWqmN"}
         ]
       }
     },
@@ -136,7 +136,7 @@
       "grant": ["hospitality_verifier"],
       "when": {
         "any": [
-          {"id": "did:example:casino"}
+          {"id": "YGQY6s3twr1gyH542EigJP"}
         ]
       }
     }
