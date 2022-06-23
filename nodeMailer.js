@@ -45,13 +45,13 @@ const sendMail = async (message) => {
     if (error) {
       console.log('Error occurred')
       console.log(error.message)
+    } else {
+      console.log('Message sent successfully!')
+      console.log(nodemailer.getTestMessageUrl(info))
+
+      // only needed when using pooled connections
+      transporter.close()
     }
-
-    console.log('Message sent successfully!')
-    console.log(nodemailer.getTestMessageUrl(info))
-
-    // only needed when using pooled connections
-    transporter.close()
   })
 }
 
