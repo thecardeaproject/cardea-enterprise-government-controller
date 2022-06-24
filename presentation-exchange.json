@@ -1,0 +1,349 @@
+{
+    "name": "Trusted Traveler Presentation Definition",
+    "purpose": "Multi-vaccine and more...",
+    "comment": "VP, OIDC, DIDComm, or CHAPI outer wrapper here",
+    "presentation_definition": {
+      "id": "32f54163-7166-48f1-93d8-ff217bdb0653",
+      "submission_requirements": [
+        {
+          "name": "Trusted Traveler",
+          "rule": "pick",
+          "count": 1,
+          "from": "Health Proof Option"
+        }
+      ],
+      "input_descriptors": [
+        {
+          "id": "health_input_1",
+          "name": "Lab_Result",
+          "group": [
+            "Health Proof Option"
+          ],
+          "purpose": "stuff",
+          "schema": [
+            {
+              "uri": "RuuJwd3JMffNwZ43DcJKN1:2:Lab_Result:1.4",
+              "required": "true"
+            }
+          ],
+          "constraints": {
+            "fields": [
+              {
+                "path": [
+                  "$.mpid"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.patient_local_id"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.patient_surnames"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.patient_given_names"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.patient_date_of_birth"
+                ],
+                "filter": {
+                  "type": "string",
+                  "format": "date"
+                }
+              },
+              {
+                "path": [
+                  "$.patient_gender_legal"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.patient_street_address"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.patient_city"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.patient_state_province_region"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.patient_postalcode"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.patient_country"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.patient_phone"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.patient_email"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.lab_observation_date_time"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.lab_result"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.lab_specimen_collected_date"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.lab_specimen_type"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.lab_result_status"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.lab_coding_qualifier"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.lab_code"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.lab_description"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.lab_order_id"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.lab_normality"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.lab_comment"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.ordering_facility_id"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.ordering_facility_id_qualifier"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.ordering_facility_name"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.ordering_facility_state_province_region"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.ordering_facility_postalcode"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.ordering_facility_country"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.performing_laboratory_id"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.performing_laboratory_id_qualifier"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.performing_laboratory_name"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.performing_laboratory_state_province_region"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.performing_laboratory_postalcode"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.performing_laboratory_country"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.lab_performed_by"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.credential_issuer_name"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              },
+              {
+                "path": [
+                  "$.credential_issue_date"
+                ],
+                "filter": {
+                  "type": "string"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }

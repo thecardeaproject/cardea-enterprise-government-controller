@@ -1,17 +1,19 @@
 require('dotenv').config()
+const axios = require('axios')
 const bodyParser = require('body-parser')
+const {DateTime} = require('luxon')
 const express = require('express')
 const http = require('http')
 const jwt = require('jsonwebtoken')
 const passport = require('passport')
+const Sequelize = require('sequelize')
 const session = require('express-session')
+const {v4: uuid} = require('uuid')
+
 const Util = require('./util')
 
-const Sequelize = require('sequelize')
-// initalize sequelize with session store
+// Initalize sequelize with session store
 const SequelizeStore = require('connect-session-sequelize')(session.Store)
-
-const Images = require('./agentLogic/images')
 
 // Import environment variables for use via an .env file in a non-containerized context
 const dotenv = require('dotenv')
@@ -19,11 +21,18 @@ dotenv.config()
 
 let app = express()
 let server = http.createServer(app)
-
 module.exports.server = server
 
 // Websockets required to make APIs work and avoid circular dependency
 let Websocket = require('./websockets.js')
+
+const Contacts = require('./orm/contacts')
+const ContactsCompiled = require('./orm/contactsCompiled')
+const Credentials = require('./agentLogic/credentials')
+const Governance = require('./agentLogic/governance')
+const Images = require('./agentLogic/images')
+const {getOrganization} = require('./agentLogic/settings')
+// const Passenger = require('./agentLogic/passenger')
 const Users = require('./agentLogic/users')
 
 const Sessions = require('./agentLogic/sessions')
@@ -44,6 +53,7 @@ server.listen(process.env.CONTROLLERPORT || 3100, () =>
 )
 
 const agentWebhookRouter = require('./agentWebhook')
+const {connect} = require('http2')
 
 // Send all cloud agent webhooks posting to the agent webhook router
 app.use('/api/controller-webhook', agentWebhookRouter)
@@ -59,11 +69,25 @@ app.use(
   express.static('governance-framework.json'),
 )
 
+// Invitation request API
+const Invitations = require('./agentLogic/invitations')
+const Connections = require('./orm/connections')
+
+app.use(
+  '/api/presentation-exchange',
+  express.static('presentation-exchange.json'),
+)
+
 // (eldersonar) Create database
-const sequelize = new Sequelize('government', 'government', 'government', {
-  host: 'government-db',
-  dialect: 'postgres',
-})
+const sequelize = new Sequelize(
+  process.env.DB,
+  process.env.DB_USERNAME,
+  process.env.DB_PASSWORD,
+  {
+    host: process.env.DB_HOST,
+    dialect: 'postgres',
+  },
+)
 
 const myStore = new SequelizeStore({
   db: sequelize,
@@ -107,6 +131,8 @@ function parseCookies(request) {
   return list
 }
 
+app.use(passport.session())
+
 // (eldersonar) Session validation middleware
 const verifySession = (req, res, next) => {
   const cookies = parseCookies(req)
@@ -123,11 +149,10 @@ const verifySession = (req, res, next) => {
       res.redirect(401, '/')
     }
   } else {
+    console.log('Unauthorized123')
     res.redirect(401, '/')
   }
 }
-
-app.use(passport.session())
 
 // Authentication
 app.post('/api/user/log-in', (req, res, next) => {

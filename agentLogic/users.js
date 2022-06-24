@@ -326,7 +326,7 @@ const createUser = async function (email, roles) {
 
     // Send new account email
     sendEmailNewAccount(
-      currentSMTP.dataValues.value.auth.user,
+      currentSMTP.dataValues.value.auth.email,
       user.email,
       currentOrganization.value.organizationName,
       token,
@@ -443,7 +443,7 @@ const updateUser = async function (
 
         if (username) {
           sendEmailPasswordReset(
-            currentSMTP.dataValues.value.auth.user,
+            currentSMTP.dataValues.value.auth.email,
             email,
             username,
             currentOrganization.value.organizationName,
@@ -452,7 +452,7 @@ const updateUser = async function (
         } else {
           // This user isn't set up yet, so resend the new account email
           sendEmailNewAccount(
-            currentSMTP.dataValues.value.auth.user,
+            currentSMTP.dataValues.value.auth.email,
             email,
             currentOrganization.value.organizationName,
             newToken,
@@ -568,7 +568,7 @@ const resendAccountConfirmation = async function (email) {
 
     // Send new account email
     sendEmailNewAccount(
-      currentSMTP.dataValues.value.auth.user,
+      currentSMTP.dataValues.value.auth.email,
       email,
       currentOrganization.value.organizationName,
       token,

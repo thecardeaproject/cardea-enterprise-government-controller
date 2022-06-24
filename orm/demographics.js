@@ -18,8 +18,20 @@ Demographic.init(
     phone: {
       type: DataTypes.TEXT,
     },
-    address: {
-      type: DataTypes.JSON,
+    street_address: {
+      type: DataTypes.TEXT,
+    },
+    city: {
+      type: DataTypes.TEXT,
+    },
+    state_province_region: {
+      type: DataTypes.TEXT,
+    },
+    postal_code: {
+      type: DataTypes.TEXT,
+    },
+    country: {
+      type: DataTypes.TEXT,
     },
     created_at: {
       type: DataTypes.DATE,
@@ -47,15 +59,28 @@ Demographic.belongsTo(Contact, {
   },
 })
 
-const createDemographic = async function (contact_id, email, phone, address) {
+const createDemographic = async function (
+  contact_id,
+  email,
+  phone,
+  street_address,
+  city,
+  state_province_region,
+  postal_code,
+  country,
+) {
   try {
     const timestamp = Date.now()
 
     const demographic = await Demographic.create({
       contact_id: contact_id,
-      email: email,
-      phone: phone,
-      address: address,
+      email,
+      phone,
+      street_address,
+      city,
+      state_province_region,
+      postal_code,
+      country,
       created_at: timestamp,
       updated_at: timestamp,
     })
@@ -71,7 +96,11 @@ const createOrUpdateDemographic = async function (
   contact_id,
   email,
   phone,
-  address,
+  street_address,
+  city,
+  state_province_region,
+  postal_code,
+  country,
 ) {
   try {
     await sequelize.transaction(
@@ -92,9 +121,13 @@ const createOrUpdateDemographic = async function (
           console.log('Creating Demographic')
           const demographic = await Demographic.upsert({
             contact_id: contact_id,
-            email: email,
-            phone: phone,
-            address: address,
+            email,
+            phone,
+            street_address,
+            city,
+            state_province_region,
+            postal_code,
+            country,
             created_at: timestamp,
             updated_at: timestamp,
           })
@@ -103,9 +136,13 @@ const createOrUpdateDemographic = async function (
           await Demographic.update(
             {
               contact_id: contact_id,
-              email: email,
-              phone: phone,
-              address: address,
+              email,
+              phone,
+              street_address,
+              city,
+              state_province_region,
+              postal_code,
+              country,
               updated_at: timestamp,
             },
             {
@@ -162,16 +199,29 @@ const readDemographic = async function (contact_id) {
   }
 }
 
-const updateDemographic = async function (contact_id, email, phone, address) {
+const updateDemographic = async function (
+  contact_id,
+  email,
+  phone,
+  street_address,
+  city,
+  state_province_region,
+  postal_code,
+  country,
+) {
   try {
     const timestamp = Date.now()
 
     await Demographic.update(
       {
         contact_id: contact_id,
-        email: email,
-        phone: phone,
-        address: address,
+        email,
+        phone,
+        street_address,
+        city,
+        state_province_region,
+        postal_code,
+        country,
         updated_at: timestamp,
       },
       {

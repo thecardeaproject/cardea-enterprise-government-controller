@@ -27,7 +27,7 @@ exports.up = function (db) {
     date_of_issue: 'text',
     date_of_expiration: 'text',
     type: 'text',
-    code: 'text',
+    issuing_country: 'text',
     authority: 'text',
     photo: 'blob',
     created_at: 'timestamptz',
