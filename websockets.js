@@ -7,7 +7,6 @@ const check = require('./canUser')
 const rules = require('./rbac-rules')
 const cookie = require('cookie')
 const cookieParser = require('cookie-parser')
-
 let userRoles = []
 
 wss = new WebSocket.Server({server: server, path: '/api/ws'})
@@ -118,7 +117,6 @@ wss.on('connection', async (ws, req) => {
         }
       }
     }
-
     try {
       const parsedMessage = JSON.parse(message)
       console.log('New Websocket Message:', parsedMessage)
@@ -537,7 +535,6 @@ const messageHandler = async (ws, context, type, data = {}) => {
             break
 
           case 'GET_THEME':
-            console.log('GET_THEME')
             const currentTheme = await Settings.getTheme()
             if (currentTheme)
               sendMessage(ws, 'SETTINGS', 'SETTINGS_THEME', currentTheme)
@@ -784,7 +781,6 @@ const messageHandler = async (ws, context, type, data = {}) => {
             break
 
           default:
-            console.log('GET_IMAGES')
             const images = await Images.getAll()
             if (images) sendMessage(ws, 'SETTINGS', 'LOGO', images[0])
             else
@@ -940,7 +936,7 @@ const Credentials = require('./agentLogic/credentials')
 const Images = require('./agentLogic/images')
 const Governance = require('./agentLogic/governance')
 const Presentations = require('./agentLogic/presentations')
-const Settings = require('./agentLogic/settings')
 const Sessions = require('./agentLogic/sessions')
+const Settings = require('./agentLogic/settings')
 const Users = require('./agentLogic/users')
 const Roles = require('./agentLogic/roles')

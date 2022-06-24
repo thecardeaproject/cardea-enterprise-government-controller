@@ -35,6 +35,8 @@ const {getOrganization} = require('./agentLogic/settings')
 // const Passenger = require('./agentLogic/passenger')
 const Users = require('./agentLogic/users')
 
+const Sessions = require('./agentLogic/sessions')
+
 app.use(bodyParser.urlencoded({extended: false}))
 app.use(bodyParser.json())
 
@@ -192,7 +194,7 @@ app.post('/api/user/log-in', (req, res, next) => {
 
 // Logging out
 app.post('/api/user/log-out', (req, res) => {
-  // Destory the session record from the store
+  // Destroy the session record from the store
   myStore.destroy(req.sessionID, function () {
     // Destroy the session cookie
     req.session.destroy(function (err) {
