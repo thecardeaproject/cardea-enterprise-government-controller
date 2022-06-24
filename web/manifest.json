@@ -1,5 +1,5 @@
 {
-  "short_name": "Cardea Agent",
+  "short_name": "Government Agent",
   "name": "Cardea Government Agent",
   "icons": [
     {
@@ -20,6 +20,6 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "",
-  "background_color": ""
+  "theme_color": "#555555",
+  "background_color": "#ffffff"
 }
